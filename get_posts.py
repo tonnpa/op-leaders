@@ -3,10 +3,11 @@
 This script retrieves all the posts pertaining to the threads in
 the .json files.
 Constraints
-    1. the files in the DIR_PATH has to follow a specific naming convention:
+    1. the files in the SRC_DIR_PATH has to follow a specific naming convention:
         FROM_DATE in (yyyy-mm-dd) _ file_number [0-9999] .json
     2. the maximum number of queries is 1000 (Disqus API limit)
     3. only threads with more than MIN_POST_CNT number of posts is queried
+    4. DST_DIR_PATH, the directory where retrieved files are stored, has to exist
 To continue from previous run, specify
     1. FROM_DATE
     2. FIRST_FILE the number of file that should be processed
@@ -18,19 +19,20 @@ import os
 from fetch import *
 
 FROM_DATE = '2014-01-01'
-DIR_PATH = './threads/' + FROM_DATE + '/'
-FIRST_FILE = 441
-LAST_THREAD_ID = 3422479706
+SRC_DIR_PATH = '/home/tonnpa/hvghu/2014/threads/'
+DST_DIR_PATH = '/home/tonnpa/hvghu/2014/posts/'
+FIRST_FILE = 207
+LAST_THREAD_ID = 3418529550
 MAX_QUERY_WARNING = 995
 MIN_POST_CNT = 5
 
-# count the number of files relevant to date
-num_files = len(os.listdir(DIR_PATH))
+# count the number of files in source directory
+num_files = len(os.listdir(SRC_DIR_PATH))
 num_queries = 0
 
 for file_num in range(FIRST_FILE, num_files+1):
-    # open JSON file
-    with open(DIR_PATH + FROM_DATE + '_' + str(file_num).zfill(4) + '.json') as file:
+    # open JSON file and read threads into data
+    with open(SRC_DIR_PATH + FROM_DATE + '_' + str(file_num).zfill(4) + '.json') as file:
         data = json.loads(file.read())
 
     # process each thread
@@ -47,7 +49,7 @@ for file_num in range(FIRST_FILE, num_files+1):
             json_posts = get_json(url_posts)
             num_queries += 1
             # save json data
-            outfile_path = './posts/' + FROM_DATE + '_' + str(file_num).zfill(4) + '_' + str(thread['id'] + '.json')
+            outfile_path = DST_DIR_PATH + FROM_DATE + '_' + str(file_num).zfill(4) + '_' + str(thread['id'] + '.json')
             with open(outfile_path, 'w') as outfile:
                 json.dump(json_posts, outfile)
 
@@ -60,7 +62,7 @@ for file_num in range(FIRST_FILE, num_files+1):
                 num_queries += 1
 
                 segment_num += 1
-                outfile_path = './posts/' + FROM_DATE + '_' + str(file_num).zfill(4) + '_' + \
+                outfile_path = DST_DIR_PATH + FROM_DATE + '_' + str(file_num).zfill(4) + '_' + \
                                str(thread['id'] + '_' + str(segment_num) + '.json')
                 with open(outfile_path, 'w') as outfile:
                     json.dump(json_posts, outfile)
@@ -74,4 +76,3 @@ for file_num in range(FIRST_FILE, num_files+1):
     if num_queries > MAX_QUERY_WARNING:
         print('Ending process. Last File Number: ' + str(file_num))
         break  # looping at files
-

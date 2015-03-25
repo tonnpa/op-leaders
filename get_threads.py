@@ -4,6 +4,7 @@ This script retrieves all threads pertaining to the forum specified
 since FROM_DATE (yyyy-mm-dd).
 Constraints:
     1. the maximum number of queries is 1000 (Disqus API limit)
+    2. DST_DIR_PATH, the directory where retrieved files are stored, has to exist
 To continue from previous run, specify
     1. FORUM
     2. FROM_DATE
@@ -17,11 +18,12 @@ __author__ = 'tonnpa'
 import time
 from fetch import *
 
-FORUM = '444hu'
+DST_DIR_PATH = '/home/tonnpa/hvghu/2014/threads/'
+FORUM = 'hvg'
 FROM_DATE = '2014-01-01'
-FIRST_QUERY = 0
-CURSOR_NEXT = ''
-MAX_QUERY_WARNING = 995
+FIRST_QUERY = 154
+CURSOR_NEXT = '1411312101841430:0:0'
+MAX_QUERY_WARNING = 800
 
 has_next = True
 num_queries = 1
@@ -33,7 +35,7 @@ while num_queries < MAX_QUERY_WARNING and has_next:
     # query url to get json response
     json_threads = get_json(url_threads)
     # save json data
-    outfile_path = './threads/' + FROM_DATE + '_' + str(FIRST_QUERY).zfill(4) + '.json'
+    outfile_path = DST_DIR_PATH + FROM_DATE + '_' + str(FIRST_QUERY).zfill(4) + '.json'
     with open(outfile_path, 'w') as outfile:
         json.dump(json_threads, outfile)
     # prepare next iteration
