@@ -11,12 +11,15 @@ def build_graph(graph, adjacency_list):
     Builds the graph by appending the nodes and edges defined
     in the adjacency_list
     """
-    graph.add_nodes_from(list(adjacency_list.keys()))
-    for node, to_nodes in adjacency_list.items():
-        for to_node in to_nodes:
-            target_author = to_node[0]
-            comment_created_at = to_node[1]
-            graph.add_edge(node, target_author, createdAt=comment_created_at)
+    # nodes
+    for node in adjacency_list.keys():
+        graph.add_node(node, joinedAt=adjacency_list[node]['joinedAt'],
+                             inactiveSince=adjacency_list[node]['inactiveSince'])
+# edges
+    for node in adjacency_list.keys():
+        edges = adjacency_list[node]['edges']
+        for to_node, attributes in edges.items():
+            graph.add_edge(node, to_node, createdAt=attributes['createdAt'], stoppedAt=attributes['stoppedAt'])
 
 
 def build_adjacency_list(adj_list, comments, comm_authors):
@@ -29,12 +32,19 @@ def build_adjacency_list(adj_list, comments, comm_authors):
     for comment in comments:
         if not comment['author']['isAnonymous']:
             author_uname = comment['author']['username']
+            author_reg_date = comment['author']['joinedAt'].split('T')[0]
             created_at = comment['createdAt'].split('T')[0]
 
             comm_authors[comment['id']] = comment['author']['username']
         else:
             # anonymous posts do not contribute to author relations
             continue
+
+        if author_uname not in adj_list.keys():
+            adj_list[author_uname] = {}
+            adj_list[author_uname]['joinedAt'] = author_reg_date
+            adj_list[author_uname]['inactiveSince'] = author_reg_date
+            adj_list[author_uname]['edges'] = {}
 
         try:
             # TypeError: parent id is not surrounded by quote marks, thus it
@@ -44,26 +54,33 @@ def build_adjacency_list(adj_list, comments, comm_authors):
         except KeyError:
             # parent is None: alternative way to handle is to check for None value
             # no parent-child relationship between posts -> no relation detected
-            if not author_uname in adj_list.keys():
-                adj_list[author_uname] = set()
+            continue
         else:
             try:
-                # add author and date of comment as a tuple
-                # alternative: use a dictionary data structure for robustness
-                adj_list[author_uname].add((parent_author, created_at))
+                # add author and other details as a dictionary
+                # update date of last comment
+                if adj_list[author_uname]['inactiveSince'] < created_at:
+                    adj_list[author_uname]['inactiveSince'] = created_at
+                if adj_list[author_uname]['edges'][parent_author]['createdAt'] > created_at:
+                    adj_list[author_uname]['edges'][parent_author]['createdAt'] = created_at
+                if adj_list[author_uname]['edges'][parent_author]['stoppedAt'] < created_at:
+                    adj_list[author_uname]['edges'][parent_author]['stoppedAt'] = created_at
             except KeyError:
-                adj_list[author_uname] = set()
-                adj_list[author_uname].add((parent_author, created_at))
+                # parent_author was unknown
+                adj_list[author_uname]['edges'][parent_author] = {}
+                adj_list[author_uname]['edges'][parent_author]['createdAt'] = created_at
+                adj_list[author_uname]['edges'][parent_author]['stoppedAt'] = created_at
 
-DIR_PATH = '/home/tonnpa/444hu/2014/posts/'
+
+DIR_PATH = '/media/sf_Ubuntu/444hu/2014/posts'
 files = os.listdir(DIR_PATH)
 files.sort()
 print('Number of files: ' + str(len(files)))
 
 MIN_RANGE = 0
-MAX_RANGE = 100
+MAX_RANGE = len(files)
 
-p_graph = nx.MultiDiGraph()
+p_graph = nx.DiGraph()
 comments_authors = {}
 authors_linkage = {}
 
@@ -87,4 +104,4 @@ for file in files[MIN_RANGE:MAX_RANGE]:
 print('===================')
 print('number of nodes: ' + str(len(p_graph.nodes())))
 print('number of edges: ' + str(len(p_graph.edges())))
-nx.write_graphml(p_graph, '/media/sf_Ubuntu/p_graph.graphml')
+nx.write_graphml(p_graph, '/media/sf_Ubuntu/p_graph_v2.graphml')
