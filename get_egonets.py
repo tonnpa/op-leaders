@@ -16,8 +16,8 @@ __author__ = 'tonnpa'
 
 import networkx as nx
 
-COMP_GRAPH_PATH = '/media/sf_Ubuntu/opleaders/p_graph_v3.graphml'
-TARGET_DIR_PATH = '/media/sf_Ubuntu/opleaders/egonets_followers_v2/'
+COMP_GRAPH_PATH = '/media/sf_Ubuntu/opleaders/p_graph.graphml'
+TARGET_DIR_PATH = '/media/sf_Ubuntu/opleaders/egonets_followers/'
 
 complete_graph = nx.read_graphml(COMP_GRAPH_PATH)
 
