@@ -16,7 +16,9 @@ Type check
 __author__ = 'tonnpa'
 
 import time
-from fetch import *
+
+from crawl.fetch import *
+
 
 DST_DIR_PATH = '/home/tonnpa/hvghu/2014/threads/'
 FORUM = 'hvg'

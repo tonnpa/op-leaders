@@ -21,14 +21,16 @@ Constraints:
 __author__ = 'tonnpa'
 
 from datetime import date, timedelta
-import networkx as nx
 import csv
 import os
 
-# SOURCE_DIR = '/media/sf_Ubuntu/opleaders/egonets_followers'
-SOURCE_DIR = '/home/tonnpa/PycharmProjects/opleaders/test_case'
-# TARGET_FILE = '/media/sf_Ubuntu/opleaders/egonet_features.csv'
-TARGET_FILE = '/tmp/features.csv'
+import networkx as nx
+
+
+SOURCE_DIR = '/media/sf_Ubuntu/opleaders/egonets_followers'
+# SOURCE_DIR = '/home/tonnpa/PycharmProjects/opleaders/test_case'
+TARGET_FILE = '/media/sf_Ubuntu/opleaders/egonet_features.csv'
+# TARGET_FILE = '/tmp/features.csv'
 
 START_DATE = date(2014, 1, 1)
 END_DATE = date(2015, 1, 1)

@@ -16,7 +16,9 @@ To continue from previous run, specify
 __author__ = 'tonnpa'
 
 import os
-from fetch import *
+
+from crawl.fetch import *
+
 
 FROM_DATE = '2014-01-01'
 SRC_DIR_PATH = '/home/tonnpa/hvghu/2014/threads/'
