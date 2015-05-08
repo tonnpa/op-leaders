@@ -8,6 +8,7 @@ api_version = '3.0'
 output_type = '.json?'
 api_key = 'api_key=OjL90VsZnaWjtuJwYhWEC6RJKN2lNucCCCUSkygOJCc6gWtjHjZdDKcceBRbL4V2'
 
+
 def get_url_list_threads(forum, since='', cursor='', limit=100, order='asc'):
     """
     Creates URL link to query threads of a specified forum
@@ -25,6 +26,7 @@ def get_url_list_threads(forum, since='', cursor='', limit=100, order='asc'):
 
     return url
 
+
 def get_url_list_posts(thread, since='', cursor='', limit=100, order='asc'):
     """
     Creates URL link to query posts of a specified thread
@@ -39,8 +41,8 @@ def get_url_list_posts(thread, since='', cursor='', limit=100, order='asc'):
           '&cursor=' + str(cursor) + \
           '&limit='  + str(limit) + \
           '&order='  + order
-
     return url
+
 
 def get_json(url):
     """

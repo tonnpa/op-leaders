@@ -42,7 +42,7 @@ for period in sorted(periods):
     plt.scatter(nfeat, efeat)
 
     for label, x, y in zip(labels, nfeat, efeat):
-        threshold = 0.6
+        threshold = 0.75
         if x > nmax*threshold or y > emax*threshold:
             plt.annotate(
                 label,
