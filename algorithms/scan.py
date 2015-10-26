@@ -1,22 +1,24 @@
 # coding=utf-8
 
-__author__ = 'tonnpa'
-
 from math import sqrt
+
+__author__ = 'tonnpa'
 
 
 class SCAN:
-    member = 'member'
-    non_member = 'non-member'
+
+    # categorization
+    member       = 'member'
+    non_member   = 'non-member'
     unclassified = 'unclassified'
 
     def __init__(self, graph, epsilon=0.7, mu=2):
-        self.graph = graph
+        self.graph   = graph
         self.epsilon = epsilon
-        self.mu = mu
+        self.mu      = mu
 
         # set of structure reachable, but not core nodes
-        self.hub = set()
+        self.hub     = set()
         self.outlier = set()
 
         # set all node labels to unclassified
@@ -38,33 +40,12 @@ class SCAN:
                 # print('sigma({0},{1}: {2}'.format(node, n, sigma))
         return e_neighborhood
 
-    def run(self):
-        cluster_id = 0
+    def _classify(self, node, label, cluster=None):
+        self.labels[node] = label
+        if cluster:
+            self.clusterID[node].add(cluster)
 
-        for node in self.graph:
-            if self.labels[node] == SCAN.unclassified:
-                if self.is_core(node):
-                    # label node as member
-                    self.labels[node] = SCAN.member
-                    # generate new cluster ID
-                    cluster_id += 1
-                    # assign cluster ID to current node
-                    self.clusterID[node].add(cluster_id)
-                    # insert all x ∈ Nε(node) into queue
-                    queue = list(self.eneighborhood(node) - {node})
-                    while queue:
-                        y = queue.pop()
-                        self.labels[y] = SCAN.member
-                        self.clusterID[y].add(cluster_id)
-                        if self.is_core(y):
-                            for x in (self.eneighborhood(y) - {y}):
-                                if not self.is_member(x) and x not in queue:
-                                    queue.append(x)
-                else:
-                    # label node as non-member
-                    self.labels[node] = SCAN.non_member
-
-        # classify non-member nodes
+    def _classify_nonmembers(self):
         non_members = (n for n in self.graph.nodes() if self.is_nonmember(n))
         for node in non_members:
             classes = set()
@@ -75,10 +56,38 @@ class SCAN:
             else:
                 self.outlier.add(node)
 
+    def run(self):
+        cluster_id = 0
+
+        for node in self.graph:
+            if self.is_unclassified(node):
+                if self.is_core(node):
+                    # generate new cluster ID
+                    cluster_id += 1
+                    # classify node
+                    self._classify(node, SCAN.member, cluster_id)
+                    # insert all x ∈ Nε(node) into queue
+                    queue = list(self.eneighborhood(node) - {node})
+                    while queue:
+                        y = queue.pop()
+                        # classify
+                        self._classify(y, SCAN.member, cluster_id)
+                        if self.is_core(y):
+                            for x in (self.eneighborhood(y) - {y}):
+                                if not self.is_member(x) and x not in queue:
+                                    # add neighboring nodes to queue for later classification
+                                    queue.append(x)
+                else:
+                    # label node as non-member
+                    self._classify(node, SCAN.non_member)
+
+        # classify non-member nodes
+        self._classify_nonmembers()
+
         # save number of clusters
         self.cluster_cnt = cluster_id
 
-    def draw(self):
+    def colors(self):
         colors = []
         for node in self.graph.nodes():
             if node in self.hub:
