@@ -34,9 +34,9 @@ class Autopart:
         self.k          = 1     # number of groups
         # arbitrary G(0) mapping nodes into k node groups
         # group numbering begins at 0
-        self.map_g_n    = {0: set(self.graph.nodes())}                               # group node mapping
-        self.map_n_g    = dict((n, 0) for n in self.graph.nodes())                   # node group mapping
-        self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes())) # node row number mapping
+        self.map_g_n    = {0: set(self.graph.nodes())}                                # group node mapping
+        self.map_n_g    = dict((n, 0) for n in self.graph.nodes())                    # node group mapping
+        self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
         # cache properties for efficiency
         self._recalculate_block_properties()
 
@@ -61,8 +61,8 @@ class Autopart:
 
     def _move_node_to_new_group(self, node):
         self.map_g_n[self.map_n_g[node]].remove(node)
-        self.map_g_n[self.k-1].add(node)
-        self.map_n_g[node] = self.k-1
+        self.map_g_n[self.k - 1].add(node)
+        self.map_n_g[node] = self.k - 1
 
         self._rearrange_matrix_and_mappings(self.map_g_n, self.map_n_g)
         self._recalculate_block_properties()
@@ -71,11 +71,11 @@ class Autopart:
         inner_loop_it = 0
         while True:
             map_n_g = {}
-            map_g_n = dict((g,set()) for g in self.groups())
+            map_g_n = dict((g, set()) for g in self.groups())
         # STEP 1: assign nodes to node group G_x(t+1)
             for node in self.nodes():
                 # the next group is the one with the lowest rearrange cost
-                next_grp = min(self.groups(), key=lambda g:self.rearrange_cost(node, self.map_n_g[node], g))
+                next_grp = min(self.groups(), key=lambda g: self.rearrange_cost(node, self.map_n_g[node], g))
                 map_n_g[node] = next_grp
                 map_g_n[next_grp].add(node)
 
@@ -107,7 +107,7 @@ class Autopart:
         # 1. switch rows (by creating a new matrix)
         adj_matrix = np.vstack((self.adj_matrix.todense()[row] for row in order_row))
         # 2. switch columns
-        adj_matrix[:,:] = adj_matrix[:,order_row]
+        adj_matrix[:, :] = adj_matrix[:, order_row]
 
         self.adj_matrix = sparse.csr_matrix(adj_matrix)
         self.map_g_n    = map_g_n
@@ -125,7 +125,7 @@ class Autopart:
         while True:
             prev_total_cost = self.total_cost()
             # split node group r with maximum entropy per node
-            group_r = max(self.groups(), key=lambda g:self.group_entropy_per_node(g))
+            group_r = max(self.groups(), key=lambda g: self.group_entropy_per_node(g))
         # STEP 1: introduce new group, the other half for splitting
             self._add_new_group()
         # STEP 2: construct initial label map
@@ -150,7 +150,7 @@ class Autopart:
         i, j = group_i, group_j
         cost = 0
         cost -= self.block_weight(i, j) * log2(self.block_density(i, j))
-        cost -= (self.block_size(i, j)-self.block_weight(i, j)) * log2(1-self.block_density(i, j))
+        cost -= (self.block_size(i, j) - self.block_weight(i, j)) * log2(1 - self.block_density(i, j))
         return cost
 
     def code_cost(self):
@@ -173,21 +173,21 @@ class Autopart:
         i = next_group          # the group into which the node would be placed
         cost = 0                # cost of shifting rows and columns + double counting
         for j in self.groups():
-            cost -= self.row_weight(x, j)*log2(self.P[i][j]) + \
-                    (self.group_size(j)-self.row_weight(x, j))*log2(1-self.P[i][j])
-            cost -= self.col_weight(x, j)*log2(self.P[i][j]) + \
-                    (self.group_size(j)-self.col_weight(x, j))*log2(1-self.P[i][j])
+            cost -= self.row_weight(x, j) * log2(self.P[i][j]) + \
+                    (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.P[i][j])
+            cost -= self.col_weight(x, j) * log2(self.P[i][j]) + \
+                    (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.P[i][j])
             cost += self.cell(x, x) * \
                     (log2(self.P[i][curr_group]) + log2(self.P[curr_group][i]) - log2(self.P[i][i]))
-            cost += (1-self.cell(x, x)) * \
-                    (log2(1-self.P[i][curr_group]) + log2(1-self.P[curr_group][i]) - log2(1-self.P[i][i]))
+            cost += (1 - self.cell(x, x)) * \
+                    (log2(1 - self.P[i][curr_group]) + log2(1 - self.P[curr_group][i]) - log2(1 - self.P[i][i]))
         return cost
 
     def code_block_weights(self):
         val = 0
         for i in self.groups():
             for j in self.groups():
-                val += ceil(log2(self.group_size(i)*self.group_size(j)+1))
+                val += ceil(log2(self.group_size(i) * self.group_size(j) + 1))
         return val
 
     def code_group_sizes(self):
@@ -201,7 +201,7 @@ class Autopart:
             return val
 
         val = 0
-        for g in range(self.k-1):
+        for g in range(self.k - 1):
             val += ceil(log2(a(g)))
         return val
 
@@ -215,7 +215,7 @@ class Autopart:
         return self.w[group_i][group_j]
 
     def cell(self, row, col):
-        return float(self.adj_matrix[row,col])
+        return float(self.adj_matrix[row, col])
 
     def col_weight(self, col, group_i):
         r_from = self.group_start_idx(group_i)
@@ -233,32 +233,33 @@ class Autopart:
             return entropy / self.group_size(group_i)
 
     def group_entropy_per_node_exclude(self, group_i, node):
-        x = self.map_n_r[node] # excluded row
+        x = self.map_n_r[node]  # excluded row
         entropy = 0
         for j in self.groups():
             n_rj = n_jr = w_rj = w_jr = p_rj = p_jr = 0
-            if j == group_i:    # crossing the same group
+            if j == group_i:     # crossing the same group
                 if self.group_size(group_i) > 1:
-                    n_rj = n_jr = (self.group_size(j)-1) * (self.group_size(j)-1)
-                    w_rj = w_jr = self.block_weight(j, j) - self.row_weight(x, group_i) - self.col_weight(x, group_i) + self.cell(x, x)
+                    n_rj = n_jr = (self.group_size(j) - 1) * (self.group_size(j) - 1)
+                    w_rj = w_jr = self.block_weight(j, j) - self.row_weight(x, group_i) - self.col_weight(x, group_i) \
+                                    + self.cell(x, x)
                     p_rj = p_jr = w_rj / n_rj
-            elif j == self.k-1: # crossing the newest group
+            elif j == self.k - 1:  # crossing the newest group
                 if self.group_size(group_i) > 1:
-                    n_rj = n_jr = (self.group_size(group_i)-1) * (self.group_size(j)+1)
+                    n_rj = n_jr = (self.group_size(group_i) - 1) * (self.group_size(j) + 1)
                     w_rj = self.block_weight(group_i, j) - self.row_weight(x, j) + self.col_weight(x, group_i)
                     w_jr = self.block_weight(j, group_i) - self.col_weight(x, j) + self.row_weight(x, group_i)
                     p_rj = w_rj / n_rj
                     p_jr = w_jr / n_jr
-            else:               # crossing any other group
+            else:                # crossing any other group
                 if self.group_size(group_i) > 1 and self.group_size(j) > 0:
-                    n_rj = n_jr = (self.group_size(group_i)-1) * self.group_size(j)
+                    n_rj = n_jr = (self.group_size(group_i) - 1) * self.group_size(j)
                     w_rj = self.block_weight(group_i, j) - self.row_weight(x, j)
                     w_jr = self.block_weight(j, group_i) - self.col_weight(x, j)
                     p_rj = w_rj / n_rj
                     p_jr = w_jr / n_jr
-            entropy -= w_rj*log2(p_rj) + (n_rj-w_rj)*log2(1-p_rj)
-            entropy -= w_jr*log2(p_jr) + (n_jr-w_jr)*log2(1-p_jr)
-        entropy /= self.group_size(group_i)-1
+            entropy -= w_rj * log2(p_rj) + (n_rj - w_rj) * log2(1 - p_rj)
+            entropy -= w_jr * log2(p_jr) + (n_jr - w_jr) * log2(1 - p_jr)
+        entropy /= self.group_size(group_i) - 1
         return entropy
 
     def group_size(self, group_i):
@@ -274,5 +275,3 @@ class Autopart:
         c_from = self.group_start_idx(group_i)
         c_to   = c_from + self.group_size(group_i)
         return float(self.adj_matrix[row, c_from:c_to].sum())
-
-
