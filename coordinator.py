@@ -32,12 +32,12 @@ def main():
     graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
     graph    = nx.read_graphml(graphml)
     autopart = ap.Autopart(graph)
-    autopart.k = 2
-    autopart.map_g_n = {0: graph.nodes()[:7], 1: graph.nodes()[7:]}
-    autopart.map_n_g = dict((node, group) for group in autopart.map_g_n for node in autopart.map_g_n[group])
-    autopart.map_n_r = dict((node, idx) for idx, node in enumerate(autopart.nodes()))
-    autopart._recalculate_block_properties()
-
+    # autopart.k = 2
+    # autopart.map_g_n = {0: set(graph.nodes()[:7]), 1: set(graph.nodes()[7:])}
+    # autopart.map_n_g = dict((node, group) for group in autopart.map_g_n for node in autopart.map_g_n[group])
+    # print(autopart.map_n_g)
+    # autopart.map_n_r = dict((node, idx) for idx, node in enumerate(autopart.nodes()))
+    # autopart._recalculate_block_properties()
     autopart.run()
     # # group to node
     # map_g_n = {}
