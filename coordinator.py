@@ -30,7 +30,7 @@ example graph adjacency matrix
 
 def main():
     test_autopart()
-    graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
+    graphml  = '/home/tonnpa/Documents/datasets/small.graphml'
     graph    = nx.read_graphml(graphml)
     autopart = ap.Autopart(graph)
     autopart.run()
@@ -144,7 +144,7 @@ def test_autopart():
     assert(autopart.group_start_idx(1) == 3)
     assert(autopart.group_start_idx(2) == 7)
 
-    autopart._recalculate_block_properties()
+    # autopart._recalculate_block_properties()
     assert(autopart.block_size(0,0) == 9)
     assert(autopart.block_size(1,2) == 8)
     assert(autopart.block_size(1,1) == 16)

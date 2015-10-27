@@ -38,7 +38,23 @@ class Autopart:
         self.map_n_g    = dict((n, 0) for n in self.graph.nodes())                    # node group mapping
         self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
         # cache properties for efficiency
-        self._recalculate_block_properties()
+        # self._recalculate_block_properties()
+
+    # @property
+    # def graph(self):
+    #     return self._graph
+    #
+    # @property
+    # def map_g_n(self):
+    #     return self._map_g_n
+    #
+    # @property
+    # def map_n_g(self):
+    #     return self._map_n_g
+    #
+    # @property
+    # def map_n_r(self):
+    #     return self._map_n_r
 
     def _block_density(self, group_i, group_j):
         if self.block_size(group_i, group_j) == 0:
@@ -57,7 +73,7 @@ class Autopart:
         new_group = self.k
         self.map_g_n[new_group] = set()
         self.k += 1
-        self._recalculate_block_properties()
+        # self._recalculate_block_properties()
 
     def _move_node_to_new_group(self, node):
         self.map_g_n[self.map_n_g[node]].remove(node)
@@ -65,7 +81,7 @@ class Autopart:
         self.map_n_g[node] = self.k - 1
 
         self._rearrange_matrix_and_mappings(self.map_g_n, self.map_n_g)
-        self._recalculate_block_properties()
+        # self._recalculate_block_properties()
 
     def _inner_loop(self):
         inner_loop_it = 0
@@ -82,7 +98,7 @@ class Autopart:
             prev_total_cost = self.total_cost()
             self._rearrange_matrix_and_mappings(map_g_n, map_n_g)
         # STEP 2: with respect to G(t+1) recompute the matrices D^t+1_i,j and the corresponding P^t+1_i,j
-            self._recalculate_block_properties()
+        #     self._recalculate_block_properties()
             print 'After inner optimization ', self.map_g_n
         # STEP 3: if there is no decrease in total cost, stop; otherwise proceed to next iteration
             curr_total_cost = self.total_cost()
@@ -114,11 +130,11 @@ class Autopart:
         self.map_n_g    = map_n_g
         self.map_n_r    = dict((node, idx) for idx, node in enumerate(order_node))
 
-    def _recalculate_block_properties(self):
-        # block weights
-        self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
-        # block densities
-        self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
+    # def _recalculate_block_properties(self):
+    #     # block weights
+    #     self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
+    #     # block densities
+    #     self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
 
     def run(self):
         outer_loop_it = 0
@@ -129,11 +145,22 @@ class Autopart:
         # STEP 1: introduce new group, the other half for splitting
             self._add_new_group()
         # STEP 2: construct initial label map
+            prev_grp_entropy = curr_grp_entropy = next_grp_entropy = None
             for node in list((self.map_g_n[group_r])):
+                if curr_grp_entropy:
+                    prev_grp_entropy = curr_grp_entropy
+                curr_grp_entropy = self.group_entropy_per_node(group_r)
+                if prev_grp_entropy and prev_grp_entropy < curr_grp_entropy:
+                    # the predicted entropy of the group without the node should be equal with
+                    # the entropy computed for the group after the move
+                    assert next_grp_entropy == curr_grp_entropy
+                next_grp_entropy = self.group_entropy_per_node_exclude(group_r, node)
                 # place the node into the new group if it decreases the per-node entropy of the group
                 if self.group_entropy_per_node_exclude(group_r, node) < self.group_entropy_per_node(group_r):
                     self._move_node_to_new_group(node)
+                    print self.map_g_n
             print 'After splitting:', self.map_g_n
+            print self.adj_matrix.todense()
         # STEP 3: run the inner loop algorithm
         #     self._inner_loop()
             curr_total_cost = self.total_cost()
@@ -178,15 +205,27 @@ class Autopart:
         x = self.map_n_r[node]  # the row number of the node that is to be placed into a group
         i = next_group          # the group into which the node would be placed
         cost = 0                # cost of shifting rows and columns + double counting
+        # for j in self.groups():
+        #     cost -= self.row_weight(x, j) * log2(self.P[i][j]) + \
+        #             (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.P[i][j])
+        #     cost -= self.col_weight(x, j) * log2(self.P[i][j]) + \
+        #             (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.P[i][j])
+        #     cost += self.cell(x, x) * \
+        #             (log2(self.P[i][curr_group]) + log2(self.P[curr_group][i]) - log2(self.P[i][i]))
+        #     cost += (1 - self.cell(x, x)) * \
+        #             (log2(1 - self.P[i][curr_group]) + log2(1 - self.P[curr_group][i]) - log2(1 - self.P[i][i]))
+        # return cost
         for j in self.groups():
-            cost -= self.row_weight(x, j) * log2(self.P[i][j]) + \
-                    (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.P[i][j])
-            cost -= self.col_weight(x, j) * log2(self.P[i][j]) + \
-                    (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.P[i][j])
+            cost -= self.row_weight(x, j) * log2(self.block_density(i, j)) + \
+                    (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.block_density(i, j))
+            cost -= self.col_weight(x, j) * log2(self.block_density(i, j)) + \
+                    (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.block_density(i, j))
             cost += self.cell(x, x) * \
-                    (log2(self.P[i][curr_group]) + log2(self.P[curr_group][i]) - log2(self.P[i][i]))
+                    (log2(self.block_density(i, curr_group)) + log2(self.block_density(curr_group, i)) -
+                     log2(self.block_density(i, i)))
             cost += (1 - self.cell(x, x)) * \
-                    (log2(1 - self.P[i][curr_group]) + log2(1 - self.P[curr_group][i]) - log2(1 - self.P[i][i]))
+                    (log2(1 - self.block_density(i, curr_group)) + log2(1 - self.block_density(curr_group, i)) -
+                     log2(1 - self.block_density(i, i)))
         return cost
 
     def code_block_weights(self):
@@ -196,7 +235,7 @@ class Autopart:
         if self.k == 1:
             return log2(len(self.nodes()))
         else:
-            sizes = sorted([self.group_size(g) for g in self.groups()], reverse=True)
+            sizes = sorted([self.group_size(grp) for grp in self.groups()], reverse=True)
 
             def a(group_i):
                 # 1: our group numbering starts at 0
@@ -206,18 +245,20 @@ class Autopart:
                 return val
 
             res = 0
-            for g in range(self.k - 1):
-                res += ceil(log2(a(g)))
+            for grp in range(self.k - 1):
+                res += ceil(log2(a(grp)))
             return res
 
     def block_density(self, group_i, group_j):
-        return self.P[group_i][group_j]
+        return self._block_density(group_i, group_j)
+        # return self.P[group_i][group_j]
 
     def block_size(self, group_i, group_j):
         return self.group_size(group_i) * self.group_size(group_j)
 
     def block_weight(self, group_i, group_j):
-        return self.w[group_i][group_j]
+        return self._block_weight(group_i, group_j)
+        # return self.w[group_i][group_j]
 
     def cell(self, row, col):
         return float(self.adj_matrix[row, col])
