@@ -29,16 +29,18 @@ example graph adjacency matrix
 """
 
 def main():
+    test_autopart()
     graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
     graph    = nx.read_graphml(graphml)
     autopart = ap.Autopart(graph)
+    autopart.run()
+
     # autopart.k = 2
     # autopart.map_g_n = {0: set(graph.nodes()[:7]), 1: set(graph.nodes()[7:])}
     # autopart.map_n_g = dict((node, group) for group in autopart.map_g_n for node in autopart.map_g_n[group])
     # print(autopart.map_n_g)
     # autopart.map_n_r = dict((node, idx) for idx, node in enumerate(autopart.nodes()))
     # autopart._recalculate_block_properties()
-    autopart.run()
     # # group to node
     # map_g_n = {}
     # map_g_n[0] = autopart.map_g_n[0][:3] + autopart.map_g_n[1][:3]
@@ -129,6 +131,8 @@ def test_autopart():
     assert(autopart.group_size(2) == len(group_2))
 
     assert(ap.log_star(16) == 7)
+    assert(ap.log2(0.5) == log(0.5, 2))
+    assert(ap.log2(20)  == log(20,  2))
 
     assert(autopart.code_group_sizes() == ceil(log(7, 2)) + ceil(log(4, 2)))
     block_weights = ceil(log(16+1, 2)) + ceil(log(12+1, 2))*2 + \

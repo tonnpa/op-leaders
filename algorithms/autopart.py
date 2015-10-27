@@ -135,9 +135,11 @@ class Autopart:
                     self._move_node_to_new_group(node)
             print 'After splitting:', self.map_g_n
         # STEP 3: run the inner loop algorithm
-            self._inner_loop()
+        #     self._inner_loop()
             curr_total_cost = self.total_cost()
             # Theorem 2: On splitting any node group, the code cost either decreases or remains the same.
+            print 'prev cost ', prev_total_cost
+            print 'curr cost ', curr_total_cost
             assert curr_total_cost <= prev_total_cost
         # STEP 4: if there is no decrease in total cost, stop; otherwise proceed to next iteration
             if prev_total_cost - curr_total_cost < epsilon:
@@ -154,15 +156,19 @@ class Autopart:
         return cost
 
     def code_cost(self):
+        print 'code cost ', sum((self.block_code_cost(i, j) for i in self.groups() for j in self.groups()))
         return sum((self.block_code_cost(i, j) for i in self.groups() for j in self.groups()))
 
     def description_cost(self):
         # number of groups
         cost = log_star(self.k)
+        print('log_star ', log_star(self.k), ' k ', self.k)
         # number of nodes in each node group
         cost += self.code_group_sizes()
+        print('code group sizes ', self.code_group_sizes())
         # weight of each D_i,j
         cost += self.code_block_weights()
+        print('code block weights', self.code_block_weights())
         return cost
 
     def total_cost(self):
@@ -184,26 +190,25 @@ class Autopart:
         return cost
 
     def code_block_weights(self):
-        val = 0
-        for i in self.groups():
-            for j in self.groups():
-                val += ceil(log2(self.group_size(i) * self.group_size(j) + 1))
-        return val
+        return sum((ceil(log2(self.block_size(i, j) + 1)) for i in self.groups() for j in self.groups()))
 
     def code_group_sizes(self):
-        sizes = sorted([self.group_size(g) for g in self.groups()], reverse=True)
+        if self.k == 1:
+            return log2(len(self.nodes()))
+        else:
+            sizes = sorted([self.group_size(g) for g in self.groups()], reverse=True)
 
-        def a(group_i):
-            # 1: our group numbering starts at 0
-            val = 1 - self.k + group_i
-            for g in range(group_i, self.k):
-                val += sizes[g]
-            return val
+            def a(group_i):
+                # 1: our group numbering starts at 0
+                val = 1 - self.k + group_i
+                for g in range(group_i, self.k):
+                    val += sizes[g]
+                return val
 
-        val = 0
-        for g in range(self.k - 1):
-            val += ceil(log2(a(g)))
-        return val
+            res = 0
+            for g in range(self.k - 1):
+                res += ceil(log2(a(g)))
+            return res
 
     def block_density(self, group_i, group_j):
         return self.P[group_i][group_j]
