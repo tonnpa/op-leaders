@@ -1,8 +1,8 @@
 import networkx            as nx
 import matplotlib.pyplot   as plt
 
-import algorithms.scan     as sc
 import algorithms.autopart as ap
+import algorithms.scan     as sc
 
 __author__ = 'tonnpa'
 
@@ -29,41 +29,21 @@ example graph adjacency matrix
 """
 
 def main():
-    test_autopart()
-    graphml  = '/home/tonnpa/Documents/datasets/small.graphml'
+    graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
     graph    = nx.read_graphml(graphml)
+
+    # g = nx.Graph()
+    # g.add_nodes_from([1,2,3,4])
+    # g.add_edges_from([(1,2),(3,4)])
+    # print nx.adj_matrix(g).todense()
+
+    # oddball  = ob.Oddball(graph)
+    # oddball.run()
+    # print(oddball.egonetworks)
+    # print(oddball.outlierness)
+
     autopart = ap.Autopart(graph)
     autopart.run()
-
-    # autopart.k = 2
-    # autopart.map_g_n = {0: set(graph.nodes()[:7]), 1: set(graph.nodes()[7:])}
-    # autopart.map_n_g = dict((node, group) for group in autopart.map_g_n for node in autopart.map_g_n[group])
-    # print(autopart.map_n_g)
-    # autopart.map_n_r = dict((node, idx) for idx, node in enumerate(autopart.nodes()))
-    # autopart._recalculate_block_properties()
-    # # group to node
-    # map_g_n = {}
-    # map_g_n[0] = autopart.map_g_n[0][:3] + autopart.map_g_n[1][:3]
-    # map_g_n[1] = autopart.map_g_n[0][3:] + autopart.map_g_n[1][3:]
-    # # node to group
-    # map_n_g = dict((node, group) for group in map_g_n for node in map_g_n[group])
-    #
-    # # adjacency matrix
-    # # row order with respect to node numbers
-    # ro_n = [node for group in map_g_n for node in map_g_n[group]]
-    # print ro_n
-    # # row order with respect to previous row numbers
-    # ro_r = [autopart.map_n_r[node] for group in map_g_n for node in map_g_n[group]]
-    # print ro_r
-    #
-    # import numpy as np
-    # adj_matrix = np.vstack((autopart.adj_matrix.todense()[i] for i in ro_r))
-    #
-    # #switch columns
-    # adj_matrix[:,:] = adj_matrix[:,ro_r]
-    # map_n_r = dict((node, idx) for idx, node in enumerate(ro_n))
-    # print adj_matrix
-    # print map_n_r
 
 
 def run_example():
