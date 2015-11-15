@@ -1,6 +1,6 @@
+import logging
 from math  import log, ceil
 from scipy import sparse
-import logging
 
 import networkx as nx
 import numpy    as np
@@ -42,7 +42,7 @@ class Autopart:
         self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
         # cache properties for efficiency
         # self._recalculate_block_properties()
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.DEBUG)
+        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 
     # @property
     # def graph(self):
@@ -102,7 +102,7 @@ class Autopart:
                 next_grp = min(self.groups(), key=lambda g: self.rearrange_cost(node, g))
                 map_n_g[node] = next_grp
                 map_g_n[next_grp].add(node)
-                logging.info('Move node %s from group %d to %d', node, self.map_n_g[node], next_grp)
+                logging.debug('Move node %s from group %d to %d', node, self.map_n_g[node], next_grp)
 
             prev_code_cost  = self.code_cost()
             prev_total_cost = self.total_cost()
@@ -185,6 +185,8 @@ class Autopart:
             curr_total_cost = self.total_cost()
             print('outer prev code cost', prev_code_cost)
             print('outer curr code cost', curr_code_cost)
+            print('outer prev total cost', prev_total_cost)
+            print('outer curr total cost', curr_total_cost)
             # Theorem 2: On splitting any node group, the code cost either decreases or remains the same.
             assert curr_code_cost <= prev_code_cost
         # STEP 4: if there is no decrease in total cost, stop; otherwise proceed to next iteration
@@ -232,31 +234,15 @@ class Autopart:
         #         (log2(1 - self.P[i][g]) + log2(1 - self.P[g][i]) - log2(1 - self.P[i][i]))
         # return cost
         for j in self.groups():
-            # row = self.row_weight(x, j) * log2(self.block_density(i, j)) + \
-            #         (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.block_density(i, j))
-            # print('row ', row)
-            # col = self.col_weight(x, j) * log2(self.block_density(j, i)) + \
-            #         (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.block_density(j, i))
-            # print('col ', col)
             cost -= self.row_weight(x, j) * log2(self.block_density(i, j)) + \
                     (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.block_density(i, j))
             cost -= self.col_weight(x, j) * log2(self.block_density(j, i)) + \
                     (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.block_density(j, i))
 
-        # dxx = self.cell(x, x) * \
-        #     (log2(self.block_density(i, g)) + log2(self.block_density(g, i)) - log2(self.block_density(i, i)))
-        # print('dxx ', dxx)
-        #
-        # d1xx = (1 - self.cell(x, x)) * \
-        #     (log2(1 - self.block_density(i, g)) + log2(1 - self.block_density(g, i)) - log2(1 - self.block_density(i, i)))
-        # print('1-dxx', d1xx)
-
         # cost += self.cell(x, x) * \
         #     (log2(self.block_density(i, g)) + log2(self.block_density(g, i)) - log2(self.block_density(i, i)))
         # cost += (1 - self.cell(x, x)) * \
         #     (log2(1 - self.block_density(i, g)) + log2(1 - self.block_density(g, i)) - log2(1 - self.block_density(i, i)))
-
-        print('Node ', node, ' from ', g, ' to ', next_group, ' cost ', cost)
         return cost
 
     def code_block_weights(self):

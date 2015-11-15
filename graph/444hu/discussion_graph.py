@@ -2,14 +2,14 @@ __author__ = 'tonnpa'
 
 import csv
 import json
-import re
 import os
+import re
 from datetime import date, timedelta
 
 import networkx as nx
 
-import input_check as ic
-from graph import primitive_graph as pgraph
+import input_check     as ic
+import primitive_graph as pgraph
 
 
 def build_graph(src_dir, **kwargs):

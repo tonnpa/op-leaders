@@ -1,7 +1,8 @@
-import networkx            as nx
 import matplotlib.pyplot   as plt
+import networkx            as nx
 
 import algorithms.autopart as ap
+import algorithms.oddball  as ob
 import algorithms.scan     as sc
 
 __author__ = 'tonnpa'
@@ -29,8 +30,19 @@ example graph adjacency matrix
 """
 
 def main():
-    graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
-    graph    = nx.read_graphml(graphml)
+    graphml = 'graph/clique.graphml'
+    graph   = nx.read_graphml(graphml)
+
+    oddball = ob.Oddball(graph)
+    oddball.run()
+
+
+
+    # autopart = ap.Autopart(graph)
+    # autopart.run()
+
+    # graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
+    # graph    = nx.read_graphml(graphml)
 
     # g = nx.Graph()
     # g.add_nodes_from([1,2,3,4])
@@ -42,8 +54,8 @@ def main():
     # print(oddball.egonetworks)
     # print(oddball.outlierness)
 
-    autopart = ap.Autopart(graph)
-    autopart.run()
+    # autopart = ap.Autopart(graph)
+    # autopart.run()
 
 
 def run_example():
