@@ -37,8 +37,13 @@ class Oddball:
         plt.suptitle('Node vs. Edge Feature')
         plt.xlabel('#Nodes')
         plt.ylabel('#Edges')
-        plt.axis([0, int(max(nfeat))*1.2, 0, int(max(efeat))*1.2])
-        plt.scatter(nfeat, efeat)
+	xmax = int(max(nfeat)*1.2)
+	ymax = int(max(efeat)*1.2)
+        plt.axis([0, xmax, 0, ymax])
+	# thresholds identifying extremes
+	plt.plot([i for i in range(1,xmax)], [i-1 for i in range(1,xmax)])
+	plt.plot([i for i in range(1,xmax)], [(i-1)*i/2 for i in range(1,xmax)])
+        plt.scatter(nfeat, efeat, c='c')
 
         # for label, x, y in zip(labels, nfeat, efeat):
         #     threshold = 0.75

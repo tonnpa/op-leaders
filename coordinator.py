@@ -30,8 +30,8 @@ example graph adjacency matrix
 """
 
 def main():
-    graphml = 'graph/clique.graphml'
-    graph   = nx.read_graphml(graphml)
+    graphml = '.graphml'
+    graph   = nx.read_graphml(graphml, node_type=int)
 
     oddball = ob.Oddball(graph)
     oddball.run()
