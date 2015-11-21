@@ -14,11 +14,11 @@ import primitive_graph as pgraph
 
 def build_graph(src_dir, **kwargs):
     """
-    Builds graph from json files retrieved from disqus listPosts.
+    Builds graphs from json files retrieved from disqus listPosts.
     :param src_dir: the directory containing the json posts files
     :param kwargs: if g_path is specified, the result will be saved
                    as a graphml file
-    :return: the constructed graph
+    :return: the constructed graphs
     """
     # INPUT CHECK
     # ===========
@@ -81,13 +81,13 @@ def build_graph(src_dir, **kwargs):
 def write_egonets(g_path, tgt_dir):
     """
     This function creates a subgraph of each node's egonets in the
-    complete graph.
+    complete graphs.
 
     Egonet definition: the central node C and all other nodes that
     have an edge pointing toward central node C
     All edges between these nodes are kept.
 
-    :param g_path: path to the complete graph
+    :param g_path: path to the complete graphs
     :param tgt_dir: path to the target folder where all subgraph
            graphml files will be written
     :return:
@@ -124,7 +124,7 @@ def write_features(src_dir, tgt_file,
     and edge features of the given graphs.
 
     Constraints:
-    1. graph naming in the source folder:
+    1. graphs naming in the source folder:
         \d{5}_(node_name).graphml
 
     :param src_dir: the folder that contains that graphs to be processed

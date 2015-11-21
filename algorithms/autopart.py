@@ -45,7 +45,7 @@ class Autopart:
         logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 
     # @property
-    # def graph(self):
+    # def graphs(self):
     #     return self._graph
     #
     # @property

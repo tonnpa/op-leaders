@@ -8,7 +8,7 @@ import algorithms.scan     as sc
 __author__ = 'tonnpa'
 
 """
-example graph adjacency matrix
+example graphs adjacency matrix
 
  0.  1.  1. | 1.  0.  0.  0. | 0.  0. | 0.  0.  1.  0.  1.
  1.  0.  1. | 0.  0.  1.  0. | 0.  0. | 0.  0.  1.  0.  0.
@@ -38,23 +38,23 @@ def main():
 
 
 
-    # autopart = ap.Autopart(graph)
+    # autopart = ap.Autopart(graphs)
     # autopart.run()
 
     # graphml  = '/home/tonnpa/Documents/datasets/example.graphml'
-    # graph    = nx.read_graphml(graphml)
+    # graphs    = nx.read_graphml(graphml)
 
     # g = nx.Graph()
     # g.add_nodes_from([1,2,3,4])
     # g.add_edges_from([(1,2),(3,4)])
     # print nx.adj_matrix(g).todense()
 
-    # oddball  = ob.Oddball(graph)
+    # oddball  = ob.Oddball(graphs)
     # oddball.run()
     # print(oddball.egonetworks)
     # print(oddball.outlierness)
 
-    # autopart = ap.Autopart(graph)
+    # autopart = ap.Autopart(graphs)
     # autopart.run()
 
 
@@ -156,7 +156,7 @@ def test_autopart():
 
 
 def write_egonetworks():
-    from graph import discussion_graph as dg
+    from graphs import discussion_graph as dg
 
     src_dir = '/tmp/posts'
 

@@ -30,6 +30,9 @@ class SCAN:
         # epsilon neighborhood of nodes
         self.e_neighborhood = dict((n, self._get_e_neighborhood(n)) for n in self.graph.nodes())
 
+        # execute algorithm
+        self.run()
+
     def _get_e_neighborhood(self, node):
         e_neighborhood = set()
         neighborhood = self.neighborhood(node)
@@ -53,6 +56,7 @@ class SCAN:
                 classes = classes | self.clusterID[n]
             if len(classes) >= 2:
                 self.hub.add(node)
+                # self.clusterID[node] = classes
             else:
                 self.outlier.add(node)
 
@@ -126,6 +130,13 @@ class SCAN:
     def direct_reach(self, node):
         reach = self.eneighborhood(node) - {node} if self.is_core(node) else set()
         return reach
+
+    def clusters(self):
+        clusters = dict((i, set()) for i in range(1, self.number_of_clusters() + 1))
+        for node, cluster_list in self.clusterID.items():
+            for c in cluster_list:
+                clusters[c].add(node)
+        return clusters
 
     def hubs(self):
         return self.hub

@@ -55,9 +55,9 @@ def build_adjacency_list(adj_list, comments, comm_authors):
 
 def build_graph(graph, adjacency_list):
     """
-    Builds the graph by appending the nodes and edges defined
+    Builds the graphs by appending the nodes and edges defined
     in the adjacency_list
-    :param graph: the graph to which elements are appended
+    :param graph: the graphs to which elements are appended
     """
     # nodes
     for node in adjacency_list:
