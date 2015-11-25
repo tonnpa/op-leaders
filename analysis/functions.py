@@ -1,5 +1,9 @@
 from math import sqrt
 
+import matplotlib.pyplot as plt
+import networkx as nx
+
+
 def neighborhood_size(node, neighborhoods):
     return len(neighborhoods[node]) + 1
 
@@ -49,11 +53,47 @@ def match_circle(circle, clusters):
         return (None, -1)
 
 def evaluate_clustering(circles, clusters):
-    pairing = {}
+    g = nx.Graph()
     for circle in circles:
-        pair, similarity = match_circle(circles[circle], clusters)
-        if pair:
-            pairing[circle] = (pair, similarity)
+        for cluster in clusters:
+            similarity = circle_similarity(circles[circle], clusters[cluster])
+            if similarity > 0:
+                g.add_edge(circle, cluster, weight=similarity)
+    match = nx.max_weight_matching(g)
 
-    score = sum(sim for _, sim in pairing.values())
+    score = 0
+    for circle in circles:
+        try:
+            score += circle_similarity(circles[circle], clusters[match[circle]])
+        except KeyError:
+            continue
+
     return score
+
+def plot_cluster_size_distribution(clusters):
+    siz = [len(clusters[cl]) for cl in clusters]
+    x = sorted(list(set(siz)))
+    y = [siz.count(i) for i in x]
+    plt.xlabel('Cluster size')
+    plt.ylabel('Count')
+    plt.plot(x, y, 'co')
+
+def plot_degree_distribution(self, line=False, axis=None):
+    if line and not (self.m and self.c):
+        self.power_law_coefficients()
+    x, y = self.degree_distribution()
+    plt.title('Node degree distribution')
+    plt.xlabel('Node degree')
+    plt.ylabel('Count')
+    plt.plot(x, y, 'co')
+
+    if axis:
+        plt.axis(axis)
+    else:
+        plt.axis([0, max(x)*1.2, 0, max(y)*1.2])
+
+    if line:
+        yy = [self.c * pow(x[i], self.m) for i in range(len(x))]
+        plt.plot(x, yy)
+
+    plt.show()
