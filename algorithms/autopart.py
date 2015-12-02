@@ -1,21 +1,12 @@
 import logging
 from math  import log, ceil
-from scipy import sparse
 
 import networkx as nx
-import numpy    as np
 
 __author__ = 'tonnpa'
 
 
 epsilon = 0.0001
-
-#TODO
-# def log2(x):
-#     if x < epsilon:
-#         return 0
-#     else:
-#         return log(x, 2)
 
 def log2(x):
     return log(x, 2)
@@ -33,7 +24,7 @@ class Autopart:
 
     def __init__(self, graph):
         self.graph      = graph
-        self.adj_matrix = nx.adjacency_matrix(self.graph, graph.nodes())
+        self.adj_matrix = nx.adjacency_matrix(self.graph, graph.nodes()).tolil()
         self.k          = 1     # number of groups
         # arbitrary G(0) mapping nodes into k node groups
         # group numbering begins at 0
@@ -43,22 +34,6 @@ class Autopart:
         # cache properties for efficiency
         # self._recalculate_block_properties()
         logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-
-    # @property
-    # def graphs(self):
-    #     return self._graph
-    #
-    # @property
-    # def map_g_n(self):
-    #     return self._map_g_n
-    #
-    # @property
-    # def map_n_g(self):
-    #     return self._map_n_g
-    #
-    # @property
-    # def map_n_r(self):
-    #     return self._map_n_r
 
     #TODO
     # def _block_density(self, group_i, group_j):
@@ -134,14 +109,48 @@ class Autopart:
         # row order with respect to previous row numbers
         order_row  = [self.map_n_r[node] for group in map_g_n for node in map_g_n[group]]
         # rewrite the adjacency matrix according to the new grouping
-        # 1. switch rows (by creating a new matrix)
-        adj_matrix = np.vstack((self.adj_matrix.todense()[row] for row in order_row))
-        # 2. switch columns
-        adj_matrix[:, :] = adj_matrix[:, order_row]
 
-        self.adj_matrix = sparse.csr_matrix(adj_matrix)
+        adj_matrix = self.adj_matrix
+        temp = {}
+        used = set()
+        # 1. switch rows
+        for idx, row_num in enumerate(order_row):
+            if idx == row_num:
+                # the previous and the current row number is the same, nothing to do
+                used.add(row_num)
+                continue
+            else:
+                if idx not in used:
+                    # save data that is to be overwritten to temporary storage
+                    temp[idx] = adj_matrix[idx, :]
+                if row_num in temp:
+                    # pull data from temporary storage
+                    adj_matrix[idx, :] = temp[row_num]
+                else:
+                    # overwrite data
+                    adj_matrix[idx, :] = adj_matrix[row_num, :]
+                used.add(row_num)
+        assert len(used) == self.graph.order()
+        temp.clear()
+        used.clear()
+        # 2. switch columns
+        for idx, col_num in enumerate(order_row):
+            if idx == col_num:
+                used.add(col_num)
+                continue
+            else:
+                if idx not in used:
+                    temp[idx] = adj_matrix[:, idx]
+                if col_num in temp:
+                    adj_matrix[:, idx] = temp[col_num]
+                else:
+                    adj_matrix[:, idx] = adj_matrix[:, col_num]
+                used.add(col_num)
+
+        assert len(used) == self.graph.order()
         self.map_g_n    = map_g_n
         self.map_n_g    = map_n_g
+        # update node => row association
         self.map_n_r    = dict((node, idx) for idx, node in enumerate(order_node))
 
     # def _recalculate_block_properties(self):

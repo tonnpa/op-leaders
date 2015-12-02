@@ -30,9 +30,10 @@ example graphs adjacency matrix
 
 
 def main():
-    test_autopart()
-    test_scan()
-
+    graphml = 'graphs/examples/polbooks.graphml'
+    graph = nx.read_graphml(graphml)
+    autopart = ap.Autopart(graph)
+    autopart.run()
 
 def run_scan_example():
     graphml = '/home/tonnpa/Documents/datasets/example.graphml'
