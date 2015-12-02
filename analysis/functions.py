@@ -52,6 +52,7 @@ def match_circle(circle, clusters):
     else:
         return (None, -1)
 
+# returns similarity score for the clustering
 def evaluate_clustering(circles, clusters):
     g = nx.Graph()
     for circle in circles:
@@ -70,6 +71,7 @@ def evaluate_clustering(circles, clusters):
 
     return score
 
+# display cluster size distribution for the given clustering
 def plot_cluster_size_distribution(clusters):
     siz = [len(clusters[cl]) for cl in clusters]
     x = sorted(list(set(siz)))
@@ -77,23 +79,4 @@ def plot_cluster_size_distribution(clusters):
     plt.xlabel('Cluster size')
     plt.ylabel('Count')
     plt.plot(x, y, 'co')
-
-def plot_degree_distribution(self, line=False, axis=None):
-    if line and not (self.m and self.c):
-        self.power_law_coefficients()
-    x, y = self.degree_distribution()
-    plt.title('Node degree distribution')
-    plt.xlabel('Node degree')
-    plt.ylabel('Count')
-    plt.plot(x, y, 'co')
-
-    if axis:
-        plt.axis(axis)
-    else:
-        plt.axis([0, max(x)*1.2, 0, max(y)*1.2])
-
-    if line:
-        yy = [self.c * pow(x[i], self.m) for i in range(len(x))]
-        plt.plot(x, yy)
-
     plt.show()
