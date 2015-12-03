@@ -34,6 +34,7 @@ class Autopart:
         self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
         # cache properties for efficiency
         self._recalculate_block_properties()
+
         logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
         self.step       = 0
 
@@ -48,6 +49,12 @@ class Autopart:
         c_to   = c_from + self.group_size(group_j)
         return float(self.adj_matrix[r_from:r_to, c_from:c_to].sum())
 
+    def _recalculate_block_properties(self):
+        # block weights
+        self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
+        # block densities - requires the computation of block weights first
+        self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
+
     def _add_new_group(self):
         new_group = self.k
         self.map_g_n[new_group] = set()
@@ -61,43 +68,6 @@ class Autopart:
 
         self._rearrange_matrix_and_mappings(self.map_g_n, self.map_n_g)
         self._recalculate_block_properties()
-
-    def _report_code_cost(self):
-        logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
-
-    def _report_adj_matrix(self, loop_name, it_num):
-        plt.matshow(self.adj_matrix.todense())
-        plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
-        self.step += 1
-
-    def _inner_loop(self):
-        inner_loop_it = 0
-        while True:
-            map_n_g = {}
-            map_g_n = dict((g, set()) for g in self.groups())
-        # STEP 1: assign nodes to node group G_x(t+1)
-            for node in self.nodes():
-                # the next group is the one with the lowest rearrange cost
-                next_grp = min(self.groups(), key=lambda g: self.rearrange_cost(node, g))
-                map_n_g[node] = next_grp
-                map_g_n[next_grp].add(node)
-                logging.debug('Move node %s from group %d to %d', node, self.map_n_g[node], next_grp)
-
-            prev_total_cost = self.total_cost()
-            self._rearrange_matrix_and_mappings(map_g_n, map_n_g)
-        # STEP 2: with respect to G(t+1) recompute the matrices D^t+1_i,j and the corresponding P^t+1_i,j
-            logging.info('After inner optimization %s', self.group_sizes())
-        # STEP 3: if there is no decrease in total cost, stop; otherwise proceed to next iteration
-            self._report_adj_matrix('inner', inner_loop_it)
-            # Theorem 1: after each iteration, the code cost decreases or remains the same
-            # assert curr_code_cost <= prev_code_cost
-            if prev_total_cost - self.total_cost() < epsilon:
-                # if there is no decrease in total cost, stop
-                break
-            else:
-                # next iteration
-                inner_loop_it += 1
-                logging.debug('Iteration inner %d', inner_loop_it)
 
     def _rearrange_matrix_and_mappings(self, map_g_n, map_n_g):
         # consistency check
@@ -153,11 +123,42 @@ class Autopart:
 
         self._recalculate_block_properties()
 
-    def _recalculate_block_properties(self):
-        # block weights
-        self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
-        # block densities
-        self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
+    def _report_code_cost(self):
+        logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
+
+    def _report_adj_matrix(self, loop_name, it_num):
+        plt.matshow(self.adj_matrix.todense())
+        plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
+        self.step += 1
+
+    def _inner_loop(self):
+        inner_loop_it = 0
+        while True:
+            map_n_g = {}
+            map_g_n = dict((g, set()) for g in self.groups())
+        # STEP 1: assign nodes to node group G_x(t+1)
+            for node in self.nodes():
+                # the next group is the one with the lowest rearrange cost
+                next_grp = min(self.groups(), key=lambda g: self.rearrange_cost(node, g))
+                map_n_g[node] = next_grp
+                map_g_n[next_grp].add(node)
+                logging.debug('Move node %s from group %d to %d', node, self.map_n_g[node], next_grp)
+
+            prev_total_cost = self.total_cost()
+            self._rearrange_matrix_and_mappings(map_g_n, map_n_g)
+        # STEP 2: with respect to G(t+1) recompute the matrices D^t+1_i,j and the corresponding P^t+1_i,j
+            logging.info('After inner optimization %s', self.group_sizes())
+        # STEP 3: if there is no decrease in total cost, stop; otherwise proceed to next iteration
+            self._report_adj_matrix('inner', inner_loop_it)
+            # Theorem 1: after each iteration, the code cost decreases or remains the same
+            # assert curr_code_cost <= prev_code_cost
+            if prev_total_cost - self.total_cost() < epsilon:
+                # if there is no decrease in total cost, stop
+                break
+            else:
+                # next iteration
+                inner_loop_it += 1
+                logging.debug('Iteration inner %d', inner_loop_it)
 
     def run(self, debug=False):
         outer_loop_it = 0
