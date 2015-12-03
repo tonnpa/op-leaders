@@ -1,6 +1,7 @@
 import logging
 from math  import log, ceil
 
+import matplotlib.pyplot as plt
 import networkx as nx
 
 __author__ = 'tonnpa'
@@ -34,15 +35,10 @@ class Autopart:
         # cache properties for efficiency
         # self._recalculate_block_properties()
         logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-
-    #TODO
-    # def _block_density(self, group_i, group_j):
-    #     if self.block_size(group_i, group_j) == 0:
-    #         return 0
-    #     else:
-    #         return self.block_weight(group_i, group_j) / self.block_size(group_i, group_j)
+        self.step       = 0
 
     def _block_density(self, group_i, group_j):
+        # avoid infinite quantities in Eq. 4 [Autopart - cross associations: Remarks]
         return (self.block_weight(group_i, group_j) + 0.5) / (self.block_size(group_i, group_j) + 1)
 
     def _block_weight(self, group_i, group_j):
@@ -66,6 +62,14 @@ class Autopart:
         self._rearrange_matrix_and_mappings(self.map_g_n, self.map_n_g)
         # self._recalculate_block_properties()
 
+    def _report_code_cost(self):
+        logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
+
+    def _report_adj_matrix(self, loop_name, it_num):
+        plt.matshow(self.adj_matrix.todense())
+        plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
+        self.step += 1
+
     def _inner_loop(self):
         inner_loop_it = 0
         while True:
@@ -79,21 +83,16 @@ class Autopart:
                 map_g_n[next_grp].add(node)
                 logging.debug('Move node %s from group %d to %d', node, self.map_n_g[node], next_grp)
 
-            prev_code_cost  = self.code_cost()
             prev_total_cost = self.total_cost()
             self._rearrange_matrix_and_mappings(map_g_n, map_n_g)
         # STEP 2: with respect to G(t+1) recompute the matrices D^t+1_i,j and the corresponding P^t+1_i,j
         #     self._recalculate_block_properties()
-            logging.info('After inner optimization %s', self.map_g_n)
+            logging.info('After inner optimization %s', self.group_sizes())
         # STEP 3: if there is no decrease in total cost, stop; otherwise proceed to next iteration
-            curr_code_cost  = self.code_cost()
-            curr_total_cost = self.total_cost()
+            self._report_adj_matrix('inner', inner_loop_it)
             # Theorem 1: after each iteration, the code cost decreases or remains the same
-            print('prev code cost: ', prev_code_cost)
-            print('curr code cost: ', curr_code_cost)
-            logging.debug("Adjacency matrix\n%s", self.adj_matrix.todense())
-            assert curr_code_cost <= prev_code_cost
-            if prev_total_cost - curr_total_cost < epsilon:
+            # assert curr_code_cost <= prev_code_cost
+            if prev_total_cost - self.total_cost() < epsilon:
                 # if there is no decrease in total cost, stop
                 break
             else:
@@ -133,7 +132,7 @@ class Autopart:
         assert len(used) == self.graph.order()
         temp.clear()
         used.clear()
-        # 2. switch columns
+        # 2. switch columns (very similar to rows)
         for idx, col_num in enumerate(order_row):
             if idx == col_num:
                 used.add(col_num)
@@ -148,58 +147,39 @@ class Autopart:
                 used.add(col_num)
 
         assert len(used) == self.graph.order()
-        self.map_g_n    = map_g_n
-        self.map_n_g    = map_n_g
+        self.map_g_n = map_g_n
+        self.map_n_g = map_n_g
         # update node => row association
-        self.map_n_r    = dict((node, idx) for idx, node in enumerate(order_node))
+        self.map_n_r = dict((node, idx) for idx, node in enumerate(order_node))
 
-    # def _recalculate_block_properties(self):
-    #     # block weights
-    #     self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
-    #     # block densities
-    #     self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
+    def _recalculate_block_properties(self):
+        # block weights
+        self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
+        # block densities
+        self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
 
     def run(self, debug=False):
         outer_loop_it = 0
         while True:
-            prev_code_cost  = self.code_cost()
             prev_total_cost = self.total_cost()
             # split node group r with maximum entropy per node
             group_r = max(self.groups(), key=lambda g: self.group_entropy_per_node(g))
         # STEP 1: introduce new group, the other half for splitting
             self._add_new_group()
         # STEP 2: construct initial label map
-            prev_grp_entropy = curr_grp_entropy = next_grp_entropy = None
             for node in list((self.map_g_n[group_r])):
-                if curr_grp_entropy:
-                    prev_grp_entropy = curr_grp_entropy
-                curr_grp_entropy = self.group_entropy_per_node(group_r)
-                if prev_grp_entropy and prev_grp_entropy < curr_grp_entropy:
-                    # the predicted entropy of the group without the node should be equal with
-                    # the entropy computed for the group after the move
-                    assert next_grp_entropy == curr_grp_entropy
-                next_grp_entropy = self.group_entropy_per_node_exclude(group_r, node)
-                logging.debug("Node to be moved: %s", node)
-                logging.debug("Curr grp entropy per node: %f", curr_grp_entropy)
-                logging.debug("Next grp entropy per node: %f", next_grp_entropy)
                 # place the node into the new group if it decreases the per-node entropy of the group
                 if self.group_entropy_per_node_exclude(group_r, node) < self.group_entropy_per_node(group_r):
                     self._move_node_to_new_group(node)
-                    logging.debug("Mapping: %s", self.map_g_n)
-            logging.info("After splitting: %s", self.map_g_n)
-            logging.debug("Adjacency matrix\n%s", self.adj_matrix.todense())
+            logging.info("After splitting: %s", self.group_sizes())
+            self._report_adj_matrix('outer', outer_loop_it)
         # STEP 3: run the inner loop algorithm
             self._inner_loop()
-            curr_code_cost  = self.code_cost()
-            curr_total_cost = self.total_cost()
-            print('outer prev code cost', prev_code_cost)
-            print('outer curr code cost', curr_code_cost)
-            print('outer prev total cost', prev_total_cost)
-            print('outer curr total cost', curr_total_cost)
+            self._report_code_cost()
             # Theorem 2: On splitting any node group, the code cost either decreases or remains the same.
-            assert curr_code_cost <= prev_code_cost
+            # assert curr_code_cost <= prev_code_cost
         # STEP 4: if there is no decrease in total cost, stop; otherwise proceed to next iteration
-            if prev_total_cost - curr_total_cost< epsilon:
+            if prev_total_cost - self.total_cost() < epsilon:
                 break
             else:
                 outer_loop_it += 1
@@ -345,6 +325,9 @@ class Autopart:
     def group_size(self, group_i):
         return len(self.map_g_n[group_i])
 
+    def group_sizes(self):
+        return [len(self.map_g_n[g]) for g in self.map_g_n]
+
     def group_start_idx(self, group_i):
         return sum([self.group_size(g) for g in range(group_i)])
 
@@ -355,3 +338,25 @@ class Autopart:
         c_from = self.group_start_idx(group_i)
         c_to   = c_from + self.group_size(group_i)
         return float(self.adj_matrix[row, c_from:c_to].sum())
+
+"""
+Entropy consistency check in self.run()
+
+prev_grp_entropy = curr_grp_entropy = next_grp_entropy = None
+for node in list((self.map_g_n[group_r])):
+    if curr_grp_entropy:
+        prev_grp_entropy = curr_grp_entropy
+    curr_grp_entropy = self.group_entropy_per_node(group_r)
+    if prev_grp_entropy and prev_grp_entropy < curr_grp_entropy:
+        # the predicted entropy of the group without the node should be equal with
+        # the entropy computed for the group after the move
+        assert next_grp_entropy == curr_grp_entropy
+    next_grp_entropy = self.group_entropy_per_node_exclude(group_r, node)
+    logging.debug("Node to be moved: %s", node)
+    logging.debug("Curr grp entropy per node: %f", curr_grp_entropy)
+    logging.debug("Next grp entropy per node: %f", next_grp_entropy)
+    # place the node into the new group if it decreases the per-node entropy of the group
+    if self.group_entropy_per_node_exclude(group_r, node) < self.group_entropy_per_node(group_r):
+        self._move_node_to_new_group(node)
+        logging.debug("Mapping: %s", self.map_g_n)
+"""

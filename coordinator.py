@@ -30,7 +30,7 @@ example graphs adjacency matrix
 
 
 def main():
-    graphml = 'graphs/examples/polbooks.graphml'
+    graphml = 'graphs/examples/scan.graphml'
     graph = nx.read_graphml(graphml)
     autopart = ap.Autopart(graph)
     autopart.run()
@@ -47,7 +47,6 @@ def run_scan_example():
 
 def run_scan():
     graphml = '/home/tonnpa/Documents/datasets/books/polbooks.graphml'
-    # graphml = '/home/tonnpa/Documents/datasets/example.graphml'
     graph  = nx.read_graphml(graphml, node_type=float)
     layout = nx.spring_layout(graph)
 
