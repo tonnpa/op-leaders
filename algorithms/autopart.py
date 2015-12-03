@@ -47,7 +47,8 @@ class Autopart:
         r_to   = r_from + self.group_size(group_i)
         c_from = self.group_start_idx(group_j)
         c_to   = c_from + self.group_size(group_j)
-        return float(self.adj_matrix[r_from:r_to, c_from:c_to].sum())
+        return float(sum([self.adj_matrix[r, c_from:c_to].sum() for r in range(r_from, r_to)]))
+        # return float(self.adj_matrix[r_from:r_to, c_from:c_to].sum())
 
     def _recalculate_block_properties(self):
         # block weights
