@@ -1,3 +1,5 @@
+import time
+
 import matplotlib.pyplot   as plt
 import networkx            as nx
 
@@ -30,10 +32,13 @@ example graphs adjacency matrix
 
 
 def main():
-    graphml = 'graphs/examples/scan.graphml'
+    graphml = 'graphs/road/road.graphml'
     graph = nx.read_graphml(graphml)
     autopart = ap.Autopart(graph)
+    start = time.clock()
     autopart.run()
+    end = time.clock()
+    print("Runtime: {:f}".format(end-start))
 
 def run_scan_example():
     graphml = '/home/tonnpa/Documents/datasets/example.graphml'

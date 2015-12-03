@@ -33,7 +33,7 @@ class Autopart:
         self.map_n_g    = dict((n, 0) for n in self.graph.nodes())                    # node group mapping
         self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
         # cache properties for efficiency
-        # self._recalculate_block_properties()
+        self._recalculate_block_properties()
         logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
         self.step       = 0
 
@@ -52,7 +52,7 @@ class Autopart:
         new_group = self.k
         self.map_g_n[new_group] = set()
         self.k += 1
-        # self._recalculate_block_properties()
+        self._recalculate_block_properties()
 
     def _move_node_to_new_group(self, node):
         self.map_g_n[self.map_n_g[node]].remove(node)
@@ -60,7 +60,7 @@ class Autopart:
         self.map_n_g[node] = self.k - 1
 
         self._rearrange_matrix_and_mappings(self.map_g_n, self.map_n_g)
-        # self._recalculate_block_properties()
+        self._recalculate_block_properties()
 
     def _report_code_cost(self):
         logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
@@ -86,7 +86,6 @@ class Autopart:
             prev_total_cost = self.total_cost()
             self._rearrange_matrix_and_mappings(map_g_n, map_n_g)
         # STEP 2: with respect to G(t+1) recompute the matrices D^t+1_i,j and the corresponding P^t+1_i,j
-        #     self._recalculate_block_properties()
             logging.info('After inner optimization %s', self.group_sizes())
         # STEP 3: if there is no decrease in total cost, stop; otherwise proceed to next iteration
             self._report_adj_matrix('inner', inner_loop_it)
@@ -152,6 +151,8 @@ class Autopart:
         # update node => row association
         self.map_n_r = dict((node, idx) for idx, node in enumerate(order_node))
 
+        self._recalculate_block_properties()
+
     def _recalculate_block_properties(self):
         # block weights
         self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
@@ -212,22 +213,13 @@ class Autopart:
         x = self.map_n_r[node]  # the row number of the node that is to be placed into a group
         i = next_group          # the group into which the node would be placed
         cost = 0                # cost of shifting rows and columns + double counting
-        # for j in self.groups():
-        #     cost -= self.row_weight(x, j) * log2(self.P[i][j]) + \
-        #             (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.P[i][j])
-        #     cost -= self.col_weight(x, j) * log2(self.P[j][i]) + \
-        #             (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.P[j][i])
-        # cost += self.cell(x, x) * \
-        #         (log2(self.P[i][g]) + log2(self.P[g][i]) - log2(self.P[i][i]))
-        # cost += (1 - self.cell(x, x)) * \
-        #         (log2(1 - self.P[i][g]) + log2(1 - self.P[g][i]) - log2(1 - self.P[i][i]))
-        # return cost
         for j in self.groups():
             cost -= self.row_weight(x, j) * log2(self.block_density(i, j)) + \
                     (self.group_size(j) - self.row_weight(x, j)) * log2(1 - self.block_density(i, j))
             cost -= self.col_weight(x, j) * log2(self.block_density(j, i)) + \
                     (self.group_size(j) - self.col_weight(x, j)) * log2(1 - self.block_density(j, i))
 
+        # Autopart - cross associations Eq. 4 does not include the following terms:
         # cost += self.cell(x, x) * \
         #     (log2(self.block_density(i, g)) + log2(self.block_density(g, i)) - log2(self.block_density(i, i)))
         # cost += (1 - self.cell(x, x)) * \
@@ -257,15 +249,15 @@ class Autopart:
             return res
 
     def block_density(self, group_i, group_j):
-        return self._block_density(group_i, group_j)
-        # return self.P[group_i][group_j]
+        # return self._block_density(group_i, group_j)
+        return self.P[group_i][group_j]
 
     def block_size(self, group_i, group_j):
         return self.group_size(group_i) * self.group_size(group_j)
 
     def block_weight(self, group_i, group_j):
-        return self._block_weight(group_i, group_j)
-        # return self.w[group_i][group_j]
+        # return self._block_weight(group_i, group_j)
+        return self.w[group_i][group_j]
 
     def cell(self, row, col):
         return float(self.adj_matrix[row, col])
