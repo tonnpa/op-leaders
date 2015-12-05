@@ -47,8 +47,10 @@ class Autopart:
         r_to   = r_from + self.group_size(group_i)
         c_from = self.group_start_idx(group_j)
         c_to   = c_from + self.group_size(group_j)
-        return float(sum([self.adj_matrix[r, c_from:c_to].sum() for r in range(r_from, r_to)]))
-        # return float(self.adj_matrix[r_from:r_to, c_from:c_to].sum())
+        if r_from < r_to and c_from < c_to:
+            return float(sum([self.adj_matrix[r, c_from:c_to].sum() for r in range(r_from, r_to)]))
+        else:
+            return 0
 
     def _recalculate_block_properties(self):
         # block weights
@@ -267,7 +269,10 @@ class Autopart:
     def col_weight(self, col, group_i):
         r_from = self.group_start_idx(group_i)
         r_to   = r_from + self.group_size(group_i)
-        return float(self.adj_matrix[r_from:r_to, col].sum())
+        if r_from < r_to:
+            return float(self.adj_matrix[r_from:r_to, col].sum())
+        else:
+            return 0
 
     def groups(self):
         return range(self.k)
@@ -331,7 +336,13 @@ class Autopart:
     def row_weight(self, row, group_i):
         c_from = self.group_start_idx(group_i)
         c_to   = c_from + self.group_size(group_i)
-        return float(self.adj_matrix[row, c_from:c_to].sum())
+        if c_from < c_to:
+            return float(self.adj_matrix[row, c_from:c_to].sum())
+        else:
+            return 0
+
+    def clusters(self):
+        return self.map_g_n
 
 """
 Entropy consistency check in self.run()
