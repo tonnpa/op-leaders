@@ -1,3 +1,5 @@
+# coding = UTF-8
+
 import logging
 from math  import log, ceil
 
@@ -130,8 +132,15 @@ class Autopart:
         logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
 
     def _report_adj_matrix(self, loop_name, it_num):
-        plt.matshow(self.adj_matrix.todense())
+        plt.matshow(self.adj_matrix.todense(), cmap=plt.cm.Greys)
+        # separate groups from each other
+        for g in self.groups():
+            idx = self.group_start_idx(g)
+            if idx > 0:
+                plt.axvline(idx, color='#ff9933', lw=2)
+                plt.axhline(idx, color='#ff9933', lw=2)
         plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
+        plt.clf()
         self.step += 1
 
     def _inner_loop(self):
