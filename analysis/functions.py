@@ -80,3 +80,11 @@ def plot_cluster_size_distribution(clusters):
     plt.ylabel('Count')
     plt.plot(x, y, 'co')
     plt.show()
+
+# display cluster size histogram for the given clustering
+def hist_cluster_size(clusters, bucket=50):
+    siz = [len(clusters[cl]) for cl in clusters]
+    plt.xlabel('Cluster size')
+    plt.ylabel('Count')
+    plt.hist(siz, bucket , color='c')
+    plt.show()

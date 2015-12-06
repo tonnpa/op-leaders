@@ -2,6 +2,8 @@
 
 from math import sqrt
 
+import networkx as nx
+
 __author__ = 'tonnpa'
 
 
@@ -90,6 +92,19 @@ class SCAN:
 
         # save number of clusters
         self.cluster_cnt = cluster_id
+
+    def write_colored_graph(self, path):
+        # coloring
+        members = set(self.graph.nodes()) - self.hubs() - self.outliers()
+        colors = {}
+        for n in members:
+            colors[n] = list(self.clusterID[n])[0]
+        for n in self.outliers():
+            colors[n] = 0
+        for n in self.hubs():
+            colors[n] = self.number_of_clusters() + 1
+        nx.set_node_attributes(self.graph, 'color', colors)
+        nx.write_graphml(self.graph, path)
 
     def colors(self):
         colors = []
