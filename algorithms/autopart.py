@@ -25,7 +25,7 @@ def log_star(x):
 
 class Autopart:
 
-    def __init__(self, graph):
+    def __init__(self, graph, log_level=logging.INFO):
         self.graph      = graph
         self.adj_matrix = nx.adjacency_matrix(self.graph, graph.nodes()).tolil()
         self.k          = 1     # number of groups
@@ -34,11 +34,13 @@ class Autopart:
         self.map_g_n    = {0: set(self.graph.nodes())}                                # group node mapping
         self.map_n_g    = dict((n, 0) for n in self.graph.nodes())                    # node group mapping
         self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
+        self.step       = 0                                                           # algorithm iteration count
         # cache properties for efficiency
         self._recalculate_block_properties()
 
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-        self.step       = 0
+        # logging configurations
+        logging.basicConfig(format="%(levelname)s: %(message)s")
+        logging.getLogger().setLevel(log_level)
 
     def _block_density(self, group_i, group_j):
         # avoid infinite quantities in Eq. 4 [Autopart - cross associations: Remarks]
@@ -132,6 +134,13 @@ class Autopart:
         logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
 
     def _report_adj_matrix(self, loop_name, it_num):
+        if logging.getLogger().getEffectiveLevel() <= logging.INFO:
+            self._plot_adj_matrix()
+            plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
+
+        self.step += 1
+
+    def _plot_adj_matrix(self):
         plt.matshow(self.adj_matrix.todense(), cmap=plt.cm.Greys)
         # separate groups from each other
         for g in self.groups():
@@ -139,9 +148,6 @@ class Autopart:
             if idx > 0:
                 plt.axvline(idx, color='#ff9933', lw=2)
                 plt.axhline(idx, color='#ff9933', lw=2)
-        plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
-        plt.clf()
-        self.step += 1
 
     def _inner_loop(self):
         inner_loop_it = 0
@@ -352,6 +358,10 @@ class Autopart:
 
     def clusters(self):
         return self.map_g_n
+
+    def show_result(self):
+        self._plot_adj_matrix()
+        plt.show()
 
 """
 Entropy consistency check in self.run()

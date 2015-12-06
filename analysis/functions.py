@@ -1,4 +1,5 @@
 from math import sqrt
+import time
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -88,3 +89,10 @@ def hist_cluster_size(clusters, bucket=50):
     plt.ylabel('Count')
     plt.hist(siz, bucket , color='c')
     plt.show()
+
+# measure runtime of algorithm, assumes the received object has a run method
+def runtime(alg_instance):
+    start = time.clock()
+    alg_instance.run()
+    end = time.clock()
+    return end - start
