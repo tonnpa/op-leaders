@@ -460,6 +460,19 @@ class Autopart:
         self._plot_adj_matrix()
         plt.show()
 
+    def outlier_score(self, group_i, group_j):
+        if self.w[group_i][group_j] == 0:
+            return 0
+        else:
+            w_orig, P_orig = self.w[group_i][group_j], self.P[group_i][group_j]
+            cost = self.total_cost()
+            self.w[group_i][group_j] -= 1
+            self.P[group_i][group_j] = self.w[group_i][group_j] / self.block_size(group_i, group_j)
+            score = cost - self.total_cost()
+            self.w[group_i][group_j], self.P[group_i][group_j] = w_orig, P_orig
+            return score
+
+
 """
 Entropy consistency check in self.run()
 
