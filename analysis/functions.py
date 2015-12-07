@@ -71,6 +71,23 @@ def evaluate_clustering(circles, clusters):
 
     return score
 
+# adjusted rand index
+def ari(clusters_x, clusters_y):
+    def nCr(num):
+        return num * (num - 1) / 2.0
+
+    n_x = sum([len(clusters_x[cl]) for cl in clusters_x])
+    n_y = sum([len(clusters_y[cl]) for cl in clusters_y])
+    assert n_x == n_y
+    n = n_x
+
+    sum_i  = sum([nCr(len(clusters_x[cl])) for cl in clusters_x])
+    sum_j  = sum([nCr(len(clusters_y[cl])) for cl in clusters_y])
+    sum_ij = sum([nCr(len(clusters_x[cl_x] & clusters_y[cl_y])) for cl_x in clusters_x for cl_y in clusters_y])
+    expected_idx = sum_i * sum_j / nCr(n)
+
+    return ( sum_ij - expected_idx ) / ( 0.5 * (sum_i + sum_j) - expected_idx )
+
 # display cluster size distribution for the given clustering
 def plot_cluster_size_distribution(clusters):
     siz = [len(clusters[cl]) for cl in clusters]
