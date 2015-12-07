@@ -12,9 +12,15 @@ __author__ = 'tonnpa'
 epsilon = 0.0001
 
 def log2(x):
+    """
+    :return: base 2 logarithm of x
+    """
     return log(x, 2)
 
 def log_star(x):
+    """
+    Implementation of log*(n) described in Autopart Section 3.1
+    """
     res = 0
     val = log(x, 2)
     while val > epsilon:
@@ -25,7 +31,13 @@ def log_star(x):
 
 class Autopart:
 
-    def __init__(self, graph):
+    def __init__(self, graph, log_level=logging.INFO):
+        """
+        :param graph: input graph
+        :param log_level: logging.DEBUG provides a more detailed information of algorithm execution
+                          logging.INFO provides only essential information about iterations (includes matrix snapshots)
+                          levels higher than INFO do not produce logging
+        """
         self.graph      = graph
         self.adj_matrix = nx.adjacency_matrix(self.graph, graph.nodes()).tolil()
         self.k          = 1     # number of groups
@@ -34,17 +46,25 @@ class Autopart:
         self.map_g_n    = {0: set(self.graph.nodes())}                                # group node mapping
         self.map_n_g    = dict((n, 0) for n in self.graph.nodes())                    # node group mapping
         self.map_n_r    = dict((n, idx) for idx, n in enumerate(self.graph.nodes()))  # node row number mapping
+        self.step       = 0                                                           # algorithm iteration count
         # cache properties for efficiency
         self._recalculate_block_properties()
 
-        logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-        self.step       = 0
+        # logging configurations
+        logging.basicConfig(format="%(levelname)s: %(message)s")
+        logging.getLogger().setLevel(log_level)
 
     def _block_density(self, group_i, group_j):
+        """
+        :return: P_i,j where i and j index groups (Autopart Table 1.)
+        """
         # avoid infinite quantities in Eq. 4 [Autopart - cross associations: Remarks]
         return (self.block_weight(group_i, group_j) + 0.5) / (self.block_size(group_i, group_j) + 1)
 
     def _block_weight(self, group_i, group_j):
+        """
+        :return: w(D_i,j), where i and j index groups (Autopart Table 1.)
+        """
         r_from = self.group_start_idx(group_i)
         r_to   = r_from + self.group_size(group_i)
         c_from = self.group_start_idx(group_j)
@@ -55,18 +75,31 @@ class Autopart:
             return 0
 
     def _recalculate_block_properties(self):
+        """
+        This method has to be called every time the adjacency matrix changes, otherwise the cached
+        properties will return invalid values for block_density and block_weight
+        Block properties = weight w(D_i,j), density P_i,j
+        """
         # block weights
         self.w = [[self._block_weight(i, j) for j in self.groups()] for i in self.groups()]
         # block densities - requires the computation of block weights first
         self.P = [[self._block_density(i, j) for j in self.groups()] for i in self.groups()]
 
     def _add_new_group(self):
+        """
+        The outer loop splits the group with the highest entropy. The splitting has to begin with
+        the addition of a new group, to which nodes may be migrated.
+        The the new group is always placed to the right, bottom side of the adjacency matrix
+        """
         new_group = self.k
         self.map_g_n[new_group] = set()
         self.k += 1
         self._recalculate_block_properties()
 
     def _move_node_to_new_group(self, node):
+        """
+        Moves node to the group of highest index, in this case, to the most recently formed group
+        """
         self.map_g_n[self.map_n_g[node]].remove(node)
         self.map_g_n[self.k - 1].add(node)
         self.map_n_g[node] = self.k - 1
@@ -75,6 +108,13 @@ class Autopart:
         self._recalculate_block_properties()
 
     def _rearrange_matrix_and_mappings(self, map_g_n, map_n_g):
+        """
+        Any change in the adjacency matrix is reflected in the group=>node node=>group mapping.
+        This method makes sure that the adjacency matrix is stored according to the mappings defined.
+
+        :param map_g_n: dictionary, key: group index, value: set of nodes
+        :param map_n_g: dictionary, key: node name, value: group index
+        """
         # consistency check
         assert(len(map_n_g) == sum([len(map_g_n[g]) for g in map_g_n]))
         # row order with respect to node IDs
@@ -129,9 +169,24 @@ class Autopart:
         self._recalculate_block_properties()
 
     def _report_code_cost(self):
+        """
+        Logs the code cost
+        """
         logging.debug('Step %d: Code cost = %f', self.step, self.code_cost())
 
     def _report_adj_matrix(self, loop_name, it_num):
+        """
+        Logs the adjacency matrix in a form of matrix plot into the /tmp partition
+        :param loop_name: outer or inner
+        :param it_num: iteration number
+        """
+        if logging.getLogger().getEffectiveLevel() <= logging.INFO:
+            self._plot_adj_matrix()
+            plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
+
+        self.step += 1
+
+    def _plot_adj_matrix(self):
         plt.matshow(self.adj_matrix.todense(), cmap=plt.cm.Greys)
         # separate groups from each other
         for g in self.groups():
@@ -139,11 +194,11 @@ class Autopart:
             if idx > 0:
                 plt.axvline(idx, color='#ff9933', lw=2)
                 plt.axhline(idx, color='#ff9933', lw=2)
-        plt.savefig('/tmp/autopart_step_' + str(self.step) + '_' + loop_name + '_' + str(it_num))
-        plt.clf()
-        self.step += 1
 
     def _inner_loop(self):
+        """
+        The InnerLoop algorithm iterates over several possible settings of group constructions for the same k.
+        """
         inner_loop_it = 0
         while True:
             map_n_g = {}
@@ -173,6 +228,9 @@ class Autopart:
                 logging.debug('Iteration inner %d', inner_loop_it)
 
     def run(self, debug=False):
+        """
+        The OuterLoop algorithm tries to look for good values of k. It invokes the InnerLoop.
+        """
         outer_loop_it = 0
         while True:
             prev_total_cost = self.total_cost()
@@ -200,6 +258,9 @@ class Autopart:
                 logging.debug("Iteration outer %d", outer_loop_it)
 
     def block_code_cost(self, group_i, group_j):
+        """
+        :return: C(D_i,j) the number of bits required to transmit D_i,j (Autopart Eq. 1)
+        """
         i, j = group_i, group_j
         cost = 0
         cost -= self.block_weight(i, j) * log2(self.block_density(i, j))
@@ -207,21 +268,36 @@ class Autopart:
         return cost
 
     def code_cost(self):
+        """
+        :return: Code Cost (Autopart Section 3.1)
+        """
         return sum((self.block_code_cost(i, j) for i in self.groups() for j in self.groups()))
 
     def description_cost(self):
+        """
+        :return: Description Cost (Autopart Section 3.1)
+        """
         # number of groups
         cost = log_star(self.k)
         # number of nodes in each node group
-        cost += self.code_group_sizes()
+        cost += self.description_cost_group_sizes()
         # weight of each D_i,j
-        cost += self.code_block_weights()
+        cost += self.description_cost_block_weights()
         return cost
 
     def total_cost(self):
+        """
+        :return: Total Encoding Cost (Autopart Section 3.1)
+        """
         return self.description_cost() + self.code_cost()
 
     def rearrange_cost(self, node, next_group):
+        """
+        (Autopart Eq. 4)
+        :param node: node to be assigned to a new group
+        :param next_group: the group to which the node will be assigned
+        :return: The cost of shifting the row and column corresponding to node "node" to group "next group"
+        """
         g = self.map_n_g[node]  # the group the node currently belongs to
         x = self.map_n_r[node]  # the row number of the node that is to be placed into a group
         i = next_group          # the group into which the node would be placed
@@ -239,10 +315,16 @@ class Autopart:
         #     (log2(1 - self.block_density(i, g)) + log2(1 - self.block_density(g, i)) - log2(1 - self.block_density(i, i)))
         return cost
 
-    def code_block_weights(self):
+    def description_cost_block_weights(self):
+        """
+        :return: Description Cost component #5: send w(D_i,j)
+        """
         return sum((ceil(log2(self.block_size(i, j) + 1)) for i in self.groups() for j in self.groups()))
 
-    def code_group_sizes(self):
+    def description_cost_group_sizes(self):
+        """
+        :return: Description Cost component #4: send the number of nodes in each node group
+        """
         if self.k == 1:
             # return ceil(log2(len(self.nodes())))
             return 0
@@ -262,20 +344,35 @@ class Autopart:
             return res
 
     def block_density(self, group_i, group_j):
-        # return self._block_density(group_i, group_j)
+        """
+        :return: cached P_i,j
+        """
+        # return self._block_density(group_i, group_j) # uncomment for un-cached version
         return self.P[group_i][group_j]
 
     def block_size(self, group_i, group_j):
+        """
+        :return: n(D_i,j) (Autopart Table 1.)
+        """
         return self.group_size(group_i) * self.group_size(group_j)
 
     def block_weight(self, group_i, group_j):
-        # return self._block_weight(group_i, group_j)
+        """
+        :return: cached w(D_i,j)
+        """
+        # return self._block_weight(group_i, group_j) # uncomment for un-cached version
         return self.w[group_i][group_j]
 
     def cell(self, row, col):
+        """
+        :return: d_x,x (Autopart Eq. 4)
+        """
         return float(self.adj_matrix[row, col])
 
     def col_weight(self, col, group_i):
+        """
+        :return: w(x_col, j) (Autopart Eq. 4)
+        """
         r_from = self.group_start_idx(group_i)
         r_to   = r_from + self.group_size(group_i)
         if r_from < r_to:
@@ -331,6 +428,9 @@ class Autopart:
         return entropy
 
     def group_size(self, group_i):
+        """
+        :return: a_i (Autopart Table 1.)
+        """
         return len(self.map_g_n[group_i])
 
     def group_sizes(self):
@@ -343,6 +443,9 @@ class Autopart:
         return self.graph.nodes()
 
     def row_weight(self, row, group_i):
+        """
+        :return: w(x_row, j) (Autopart Eq. 4)
+        """
         c_from = self.group_start_idx(group_i)
         c_to   = c_from + self.group_size(group_i)
         if c_from < c_to:
@@ -352,6 +455,23 @@ class Autopart:
 
     def clusters(self):
         return self.map_g_n
+
+    def show_result(self):
+        self._plot_adj_matrix()
+        plt.show()
+
+    def outlier_score(self, group_i, group_j):
+        if self.w[group_i][group_j] == 0:
+            return 0
+        else:
+            w_orig, P_orig = self.w[group_i][group_j], self.P[group_i][group_j]
+            cost = self.total_cost()
+            self.w[group_i][group_j] -= 1
+            self.P[group_i][group_j] = self.w[group_i][group_j] / self.block_size(group_i, group_j)
+            score = cost - self.total_cost()
+            self.w[group_i][group_j], self.P[group_i][group_j] = w_orig, P_orig
+            return score
+
 
 """
 Entropy consistency check in self.run()

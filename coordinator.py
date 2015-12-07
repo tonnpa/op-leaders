@@ -107,11 +107,11 @@ def test_autopart():
     assert(ap.log2(0.5) == log(0.5, 2))
     assert(ap.log2(20)  == log(20,  2))
 
-    assert(autopart.code_group_sizes() == ceil(log(7, 2)) + ceil(log(4, 2)))
+    assert(autopart.description_cost_group_sizes() == ceil(log(7, 2)) + ceil(log(4, 2)))
     block_weights = ceil(log(16 + 1, 2)) + ceil(log(12 + 1, 2)) * 2 + \
                     ceil(log( 9 + 1, 2)) + ceil(log( 8 + 1, 2)) * 2 + \
                     ceil(log( 4 + 1, 2)) + ceil(log( 6 + 1, 2)) * 2
-    assert (autopart.code_block_weights() == block_weights)
+    assert (autopart.description_cost_block_weights() == block_weights)
 
     assert(autopart.group_start_idx(0) == 0)
     assert(autopart.group_start_idx(1) == 3)
