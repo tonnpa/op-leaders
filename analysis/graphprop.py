@@ -26,14 +26,14 @@ class GraphProp:
     def max_node_degree(self):
         return max(self.graph.degree(n) for n in self.graph.nodes())
 
-    def plot_degree_distribution(self, line=False, axis=None):
+    def plot_degree_distribution(self, line=False, axis=None, dot_size=7):
         if line and not (self.m and self.c):
             self.power_law_coefficients()
         x, y = self.degree_distribution()
-        plt.title('Node degree distribution')
+        # plt.title('Node degree distribution')
         plt.xlabel('Node degree')
         plt.ylabel('Count')
-        plt.plot(x, y, 'co')
+        plt.plot(x, y, 'co', markersize=dot_size)
 
         if axis:
             plt.axis(axis)
