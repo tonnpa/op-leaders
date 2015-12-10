@@ -8,7 +8,7 @@ class Oddball:
         self._graph       = graph
         self._egonetworks = dict((node, {}) for node in graph.nodes())
 
-        self.run()
+        self._run()
 
     @property
     def egonetworks(self):
@@ -18,7 +18,7 @@ class Oddball:
     def graph(self):
         return self._graph
 
-    def run(self):
+    def _run(self):
         for node in self.nodes():
             # extract egonetwork
             egonetwork = self.graph.subgraph(self.graph.neighbors(node) + [node])

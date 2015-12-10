@@ -31,7 +31,7 @@ def log_star(x):
 
 class Autopart:
 
-    def __init__(self, graph, log_level=logging.INFO):
+    def __init__(self, graph, log_level=logging.ERROR):
         """
         :param graph: input graph
         :param log_level: logging.DEBUG provides a more detailed information of algorithm execution
@@ -53,6 +53,8 @@ class Autopart:
         # logging configurations
         logging.basicConfig(format="%(levelname)s: %(message)s")
         logging.getLogger().setLevel(log_level)
+
+        self._run()
 
     def _block_density(self, group_i, group_j):
         """
@@ -227,7 +229,7 @@ class Autopart:
                 inner_loop_it += 1
                 logging.debug('Iteration inner %d', inner_loop_it)
 
-    def run(self, debug=False):
+    def _run(self):
         """
         The OuterLoop algorithm tries to look for good values of k. It invokes the InnerLoop.
         """
@@ -245,7 +247,7 @@ class Autopart:
                     self._move_node_to_new_group(node)
             logging.info("After splitting: %s", self.group_sizes())
             self._report_adj_matrix('outer', outer_loop_it)
-        # STEP 3: run the inner loop algorithm
+        # STEP 3: _run the inner loop algorithm
             self._inner_loop()
             self._report_code_cost()
             # Theorem 2: On splitting any node group, the code cost either decreases or remains the same.
@@ -474,7 +476,7 @@ class Autopart:
 
 
 """
-Entropy consistency check in self.run()
+Entropy consistency check in self._run()
 
 prev_grp_entropy = curr_grp_entropy = next_grp_entropy = None
 for node in list((self.map_g_n[group_r])):

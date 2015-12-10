@@ -33,7 +33,7 @@ class SCAN:
         self.e_neighborhood = dict((n, self._get_e_neighborhood(n)) for n in self.graph.nodes())
 
         # execute algorithm
-        self.run()
+        self._run()
 
     def _get_e_neighborhood(self, node):
         e_neighborhood = set()
@@ -62,7 +62,7 @@ class SCAN:
             else:
                 self.outlier.add(node)
 
-    def run(self):
+    def _run(self):
         cluster_id = 0
 
         for node in self.graph:

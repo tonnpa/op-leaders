@@ -1,5 +1,3 @@
-import time
-
 import matplotlib.pyplot   as plt
 import networkx            as nx
 
@@ -32,19 +30,14 @@ example graphs adjacency matrix
 
 
 def main():
-    graphml = 'graphs/road/road.graphml'
-    graph = nx.read_graphml(graphml)
-    autopart = ap.Autopart(graph)
-    start = time.clock()
-    autopart.run()
-    end = time.clock()
-    print("Runtime: {:f}".format(end-start))
+    test_autopart()
+    test_scan()
 
 def run_scan_example():
     graphml = '/home/tonnpa/Documents/datasets/example.graphml'
     graph = nx.read_graphml(graphml, node_type=int)
     scan_obj = sc.SCAN(graph)
-    scan_obj.run()
+    scan_obj._run()
     print('hubs: ', scan_obj.hub)
     print('outliers: ', scan_obj.outlier)
     print('cluster count: ', scan_obj.number_of_clusters())
@@ -57,7 +50,7 @@ def run_scan():
 
     for epsi in (0.4, 0.5, 0.6, 0.7):
         scan_obj = sc.SCAN(graph, epsilon=epsi, mu=3)
-        scan_obj.run()
+        scan_obj._run()
         # print('hubs: ', scan_obj.hub)
         # print('outliers: ', scan_obj.outlier)
         # print('cluster count: ', scan_obj.number_of_clusters())
@@ -82,7 +75,7 @@ def test_scan():
     assert(scan_obj.eneighborhood(5) == {3, 4, 5, 6, 15, 20})
     assert(scan_obj.sigma(3, 7) - 0.50709255283711 < 0.0001)
 
-    scan_obj.run()
+    scan_obj._run()
     assert(scan_obj.hubs() == {7})
     assert(scan_obj.outliers() == {14})
 
@@ -93,11 +86,14 @@ def test_autopart():
     graphml  = 'graphs/examples/scan.graphml'
     graph    = nx.read_graphml(graphml)
     autopart = ap.Autopart(graph)
-    autopart.k = 3
+
     group_0 = [1, 2, 3]
     group_1 = [4, 5, 6, 7]
     group_2 = [8, 9]
+    autopart.k = 3
+    autopart.adj_matrix = nx.adjacency_matrix(graph)
     autopart.map_g_n = {0: group_0, 1: group_1, 2: group_2}
+    autopart._recalculate_block_properties()
 
     assert(autopart.group_size(0) == len(group_0))
     assert(autopart.group_size(1) == len(group_1))
@@ -117,7 +113,6 @@ def test_autopart():
     assert(autopart.group_start_idx(1) == 3)
     assert(autopart.group_start_idx(2) == 7)
 
-    # autopart._recalculate_block_properties()
     assert(autopart.block_size(0, 0) == 9)
     assert(autopart.block_size(1, 2) == 8)
     assert(autopart.block_size(1, 1) == 16)
