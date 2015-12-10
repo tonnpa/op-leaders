@@ -17,7 +17,7 @@ __author__ = 'tonnpa'
 
 import time
 
-from crawl.fetch import *
+from disqus.fetch import *
 
 
 DST_DIR_PATH = '/home/tonnpa/hvghu/2014/threads/'

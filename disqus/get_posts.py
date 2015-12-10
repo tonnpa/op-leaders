@@ -17,7 +17,7 @@ __author__ = 'tonnpa'
 
 import os
 
-from crawl.fetch import *
+from disqus.fetch import *
 
 
 FROM_DATE = '2014-01-01'

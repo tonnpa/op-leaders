@@ -1,7 +1,8 @@
 __author__ = 'tonnpa'
 
-from urllib.request import urlopen
 import json
+
+from urllib.request import urlopen
 
 # static variables common to all URLs
 api_version = '3.0'
