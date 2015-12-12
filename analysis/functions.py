@@ -135,6 +135,6 @@ def runtime(function, parameter):
     measure runtime of function
     """
     start = time.clock()
-    function(parameter)
+    res = function(parameter)
     end = time.clock()
-    return end - start
+    return end - start, res
